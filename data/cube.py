@@ -5,6 +5,13 @@
 import numpy as np
 from glumpy import app, gl, glm, gloo
 from glumpy.ext import png
+from pathlib import Path
+import fire
+import tqdm
+import logging
+
+log = logging.getLogger('glumpy')
+log.setLevel(logging.WARNING)
 
 
 def create_cube():
@@ -70,82 +77,90 @@ def mono():
     return 255 * np.ones((32, 32))
 
 
-class CubeRenderer:
-    def __init__(self):
-        with open('cube.vert') as f:
-            self.vertex = f.read()
+def main(n_samples, imgsize, root='./cubes', show=False):
+    pbar = tqdm.tqdm(total=n_samples, dynamic_ncols=True)
+    root = Path(root)
+    root.mkdir(exist_ok=True)
 
-        with open('cube.frag') as f:
-            self.fragment = f.read()
+    with open('cube.vert') as f:
+        vertex = f.read()
 
-        self.window = app.Window(width=512, height=512, visible=False,
-                                 color=(0.0, 0.0, 0.0, 1.00))
-        self.framebuffer = np.zeros((self.window.height, self.window.width *
-                                     3), dtype=np.uint8)
+    with open('cube.frag') as f:
+        fragment = f.read()
 
-        V, I, _ = create_cube()
-        self.cube = gloo.Program(self.vertex, self.fragment)
-        self.cube.bind(V)
+    window = app.Window(width=imgsize, height=imgsize, visible=show,
+                        color=(0.0, 0.0, 0.0, 1.00))
+    framebuffer = np.zeros((window.height, window.width * 3),
+                           dtype=np.uint8)
 
-        self.cube["u_light_position"] = 3, 3, 3
-        self.cube["u_light_intensity"] = 1, 1, 1
-        self.cube["u_light_ambient"] = 0.2
-        # cube['u_texture'] = checkerboard()
-        self.cube['u_texture'] = mono()
-        self.cube['u_model'] = np.eye(4, dtype=np.float32)
-        self.cube['u_view'] = glm.translation(0, 0, -10)
-        self.min_xy, self.max_xy = -2, 2
-        self.frame = 0
+    V, I, _ = create_cube()
+    cube = gloo.Program(vertex, fragment)
+    cube.bind(V)
 
-        @self.window.event
-        def on_draw(dt):
-            self.window.clear()
+    cube["u_light_position"] = 3, 3, 3
+    cube["u_light_intensity"] = 1, 1, 1
+    cube["u_light_ambient"] = 0.2
+    # cube['u_texture'] = checkerboard()
+    cube['u_texture'] = mono()
+    cube['u_model'] = np.eye(4, dtype=np.float32)
+    cube['u_view'] = glm.translation(0, 0, -10)
+    min_xy, max_xy = -2, 2
+    frame = 0
 
-            # Fill cube
-            gl.glDisable(gl.GL_BLEND)
-            gl.glEnable(gl.GL_DEPTH_TEST)
-            gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
-            self.cube['u_color'] = 1, 1, 1, 1
-            self.cube.draw(gl.GL_TRIANGLES, I)
+    @window.event
+    def on_draw(dt):
+        nonlocal frame
 
-            # Rotate cube
-            view = self.cube['u_view'].reshape(4, 4)
-            model = np.eye(4, dtype=np.float32)
-            theta = np.random.random_sample() * 90
-            phi = np.random.random_sample() * 180
-            glm.rotate(model, theta, 0, 0, 1)
-            glm.rotate(model, phi, 0, 1, 0)
+        window.clear()
 
-            # Translate cube
-            x, y = np.random.random_sample(2) * (self.max_xy - self.min_xy) + self.min_xy
-            glm.translate(model, x, y, 0)
+        # Fill cube
+        gl.glDisable(gl.GL_BLEND)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
+        cube['u_color'] = 1, 1, 1, 1
+        cube.draw(gl.GL_TRIANGLES, I)
 
-            self.cube['u_model'] = model
-            self.cube['u_normal'] = np.array(np.matrix(np.dot(view, model)).I.T)
+        # Rotate cube
+        view = cube['u_view'].reshape(4, 4)
+        model = np.eye(4, dtype=np.float32)
+        theta = np.random.random_sample() * 90
+        phi = np.random.random_sample() * 180
+        glm.rotate(model, theta, 0, 0, 1)
+        glm.rotate(model, phi, 0, 1, 0)
 
-            # Export screenshot
-            if self.frame:  # Skip empty zero frame
-                gl.glReadPixels(0, 0, self.window.width, self.window.height,
-                                gl.GL_RGB, gl.GL_UNSIGNED_BYTE,
-                                self.framebuffer)
-                png.from_array(self.framebuffer,
-                               'RGB').save(f'cube/{self.frame-1:05d}.png')
-            self.frame += 1
+        # Translate cube
+        x, y = np.random.random_sample(2) * (max_xy -
+                                             min_xy) + min_xy
+        glm.translate(model, x, y, 0)
 
-        @self.window.event
-        def on_resize(width, height):
-            self.cube['u_projection'] = glm.perspective(45.0, width /
-                                                        float(height), 2.0,
-                                                        100.0)
+        cube['u_model'] = model
+        cube['u_normal'] = np.array(np.matrix(np.dot(view, model)).I.T)
 
-        @self.window.event
-        def on_init():
-            gl.glEnable(gl.GL_DEPTH_TEST)
-            gl.glPolygonOffset(1, 1)
-            gl.glEnable(gl.GL_LINE_SMOOTH)
+        # Export screenshot
+        if frame:  # Skip empty zero frame
+            gl.glReadPixels(0, 0, window.width,
+                            window.height, gl.GL_RGB,
+                            gl.GL_UNSIGNED_BYTE, framebuffer)
+            png.from_array(framebuffer,
+                           'RGB').save(root / f'{frame-1:05d}.png')
+            pbar.update()
+        frame += 1
 
-        app.run(framecount=10)
+    @window.event
+    def on_resize(width, height):
+        cube['u_projection'] = glm.perspective(45.0,
+                                               width / float(height),
+                                               2.0, 100.0)
+
+    @window.event
+    def on_init():
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glPolygonOffset(1, 1)
+        gl.glEnable(gl.GL_LINE_SMOOTH)
+
+    app.run(framecount=n_samples)
+    pbar.close()
 
 
 if __name__ == '__main__':
-    CubeRenderer()
+    fire.Fire(main)
