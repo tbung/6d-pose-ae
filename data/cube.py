@@ -77,7 +77,7 @@ def mono():
     return 255 * np.ones((32, 32))
 
 
-def main(n_samples, imgsize, root='./cubes', show=False):
+def render(n_samples, imgsize, root='./cubes', show=False):
     pbar = tqdm.tqdm(total=n_samples, dynamic_ncols=True)
     root = Path(root)
     root.mkdir(exist_ok=True)
@@ -163,4 +163,4 @@ def main(n_samples, imgsize, root='./cubes', show=False):
 
 
 if __name__ == '__main__':
-    fire.Fire(main)
+    fire.Fire(render)
