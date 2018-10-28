@@ -9,7 +9,7 @@ import random
 class GeometricDataset(data.Dataset):
     """Dataset class for gemoetric shapes."""
 
-    def __init__(self, image_dir, attr_path, selected_attrs, transform, mode = 'Train'):
+    def __init__(self, image_dir, attr_path, transform, selected_attrs = None, mode = 'Train'):
         """Init and preprocess dataset"""
         self.image_dir  = image_dir
         self.attr_path  = attr_path
@@ -36,6 +36,8 @@ class GeometricDataset(data.Dataset):
             self.attr2idx[attr_name] = i
             self.idx2attr[i]
 
+        if self.selected_attrs is None: self.selected_attrs = all_attr_names[1:]
+
         lines = lines[2:]
         random.seed(1)
         random.shuffle(lines)
@@ -44,15 +46,15 @@ class GeometricDataset(data.Dataset):
             filename = split[0]
             values = split[1:]
 
-        label = []
-        for attr_name in self.selected_attrs:
-            idx = self.attr2idx[attr_name]
-            label.append(values[idx] == '1')
+            label = []
+            for attr_name in self.selected_attrs:
+                idx = self.attr2idx[attr_name]
+                label.append(values[idx])
 
-        if (i+1) < 2000:
-            self.test_dataset.append([filename, label])
-        else:
-            self.train_dataset.append([filename, label])
+            if (i+1) < 2000:
+                self.test_dataset.append([filename, label])
+            else:
+                self.train_dataset.append([filename, label])
     print('Finished preprocessing the Geometric dataset...')
 
     def __getitem__(self, index):
@@ -66,24 +68,23 @@ class GeometricDataset(data.Dataset):
         """Return the number of images."""
         return self.num_images
 
-def get_loader(image_dir, attr_path, selected_attrs, crop_size=178, image_size=128, 
+def get_loader(image_dir, attr_path, selected_attrs = None, image_size=64, 
                batch_size=16, dataset='Geometric', mode='train', num_workers=1, pin_memory = False, 
                mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5]):
     """Build and return a data loader."""
     transform = []
-    transform.append(T.CenterCrop(crop_size))
     transform.append(T.Resize(image_size))
     transform.append(T.ToTensor())
     transform.append(T.Normalize(mean = mean, std = std))
     transform = T.Compose(transform)
 
     if dataset == 'Geometric':
-        dataset = GeometricDataset(image_dir, attr_path, selected_attrs, transform, mode)
+        dataset = GeometricDataset(image_dir, attr_path, transform, selected_attrs, mode)
 
     data_loader = data.DataLoader(dataset=dataset,
                                   batch_size=batch_size,
                                   shuffle= False,
-                                  num_workers=num_workers,
+                                  num_workers= num_workers,
                                   pin_memory = pin_memory)
     return data_loader
 
