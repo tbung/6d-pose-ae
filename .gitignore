@@ -1,6 +1,6 @@
 # Ignore dataset
-cubes
-squares
+cube/
+square/
 
 # Created by https://www.gitignore.io/api/python
 

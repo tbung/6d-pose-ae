@@ -14,6 +14,47 @@ log = logging.getLogger('glumpy')
 log.setLevel(logging.WARNING)
 
 
+def create_square():
+    vtype = [('a_position', np.float32, 3), ('a_texcoord', np.float32, 2),
+             ('a_normal',   np.float32, 3), ('a_color',    np.float32, 4)]
+    itype = np.uint32
+
+    # Vertices positions
+    p = np.array([[1, 1, 0], [-1, 1, 0], [-1, -1, 0], [1, -1, 0]],
+                 dtype=float)
+    # Face Normals
+    n = np.array([[0, 0, 1]])
+    # Vertice colors
+    c = np.array([[1.0, 1.0, 1.0, 1], [1.0, 1.0, 1.0, 1], [1.0, 1.0, 1.0, 1],
+                  [1.0, 1.0, 1.0, 1]])
+    # Texture coords
+    t = np.array([[0, 0]])
+
+    faces_p = [0, 1, 2, 3]
+    faces_c = [0, 1, 2, 3]
+    faces_n = [0, 0, 0, 0]
+    faces_t = [0, 0, 0, 0]
+
+    vertices = np.zeros(4, vtype)
+    vertices['a_position'] = p[faces_p]
+    vertices['a_normal'] = n[faces_n]
+    vertices['a_color'] = c[faces_c]
+    vertices['a_texcoord'] = t[faces_t]
+
+    filled = np.resize(
+       np.array([0, 1, 2, 0, 2, 3], dtype=itype), 6)
+
+    outline = np.resize(
+        np.array([0, 1, 1, 2, 2, 3, 3, 0], dtype=itype), 6 * (2 * 4))
+    outline += np.repeat(4 * np.arange(6, dtype=itype), 8)
+
+    vertices = vertices.view(gloo.VertexBuffer)
+    filled = filled.view(gloo.IndexBuffer)
+    outline = outline.view(gloo.IndexBuffer)
+
+    return vertices, filled, outline
+
+
 def create_cube():
     vtype = [('a_position', np.float32, 3), ('a_texcoord', np.float32, 2),
              ('a_normal',   np.float32, 3), ('a_color',    np.float32, 4)]
@@ -77,9 +118,10 @@ def mono():
     return 255 * np.ones((32, 32))
 
 
-def render(n_samples, imgsize, fixed_z=True, root='./cubes', show=False):
+def render(shape, n_samples, imgsize, fixed_z=True,
+           show=False):
     pbar = tqdm.tqdm(total=n_samples, dynamic_ncols=True)
-    root = Path(root)
+    root = Path(shape)
     root.mkdir(exist_ok=True)
     (root / 'no_rotation').mkdir(exist_ok=True)
     (root / 'no_translation').mkdir(exist_ok=True)
@@ -87,10 +129,10 @@ def render(n_samples, imgsize, fixed_z=True, root='./cubes', show=False):
     gt = []
     x = y = z = theta = phi = 0
 
-    with open('cube.vert') as f:
+    with open('data.vert') as f:
         vertex = f.read()
 
-    with open('cube.frag') as f:
+    with open('data.frag') as f:
         fragment = f.read()
 
     window = app.Window(width=imgsize, height=imgsize, visible=show,
@@ -98,14 +140,21 @@ def render(n_samples, imgsize, fixed_z=True, root='./cubes', show=False):
     framebuffer = np.zeros((window.height, window.width * 3),
                            dtype=np.uint8)
 
-    V, I, _ = create_cube()
-    cube = gloo.Program(vertex, fragment)
-    cube.bind(V)
+    if shape == 'cube':
+        V, I, _ = create_cube()
+        cube = gloo.Program(vertex, fragment)
+        cube.bind(V)
+        cube["u_light_position"] = 3, 3, 3
+        cube["u_light_intensity"] = 1, 1, 1
+        cube["u_light_ambient"] = 0.2
+    elif shape == 'square':
+        V, I, _ = create_square()
+        cube = gloo.Program(vertex, fragment)
+        cube.bind(V)
+        cube["u_light_position"] = 3, 3, 3
+        cube["u_light_intensity"] = 0, 0, 0
+        cube["u_light_ambient"] = 1
 
-    cube["u_light_position"] = 3, 3, 3
-    cube["u_light_intensity"] = 1, 1, 1
-    cube["u_light_ambient"] = 0.2
-    # cube['u_texture'] = checkerboard()
     cube['u_texture'] = mono()
     cube['u_model'] = np.eye(4, dtype=np.float32)
     cube['u_view'] = glm.translation(0, 0, -10)
@@ -138,11 +187,12 @@ def render(n_samples, imgsize, fixed_z=True, root='./cubes', show=False):
 
         if (frame - 1) % 3 == 0:
             theta = np.random.random_sample() * 90
-            phi = np.random.random_sample() * 180
             x, y = np.random.random_sample(2) * (max_xy -
                                                  min_xy) + min_xy
             if not fixed_z:
                 z = np.random.random_sample() * (max_xy - min_xy) + min_xy
+            if shape == 'cube':
+                phi = np.random.random_sample() * 180
 
         window.clear()
 
