@@ -77,7 +77,7 @@ def mono():
     return 255 * np.ones((32, 32))
 
 
-def render(n_samples, imgsize, root='./cubes', show=False):
+def render(n_samples, imgsize, fixed_z=True, root='./cubes', show=False):
     pbar = tqdm.tqdm(total=n_samples, dynamic_ncols=True)
     root = Path(root)
     root.mkdir(exist_ok=True)
@@ -85,7 +85,7 @@ def render(n_samples, imgsize, root='./cubes', show=False):
     (root / 'no_translation').mkdir(exist_ok=True)
     (root / 'images').mkdir(exist_ok=True)
     gt = []
-    x = y = theta = phi = 0
+    x = y = z = theta = phi = 0
 
     with open('cube.vert') as f:
         vertex = f.read()
@@ -114,7 +114,7 @@ def render(n_samples, imgsize, root='./cubes', show=False):
 
     @window.event
     def on_draw(dt):
-        nonlocal frame, x, y, theta, phi
+        nonlocal frame, x, y, z, theta, phi
 
         # Export screenshot
         gl.glReadPixels(0, 0, window.width,
@@ -123,7 +123,7 @@ def render(n_samples, imgsize, root='./cubes', show=False):
         if frame > 2:  # Skip empty zero frame
             if (frame) % 3 == 0:
                 pbar.update()
-                gt.append([x, y, 1, theta, phi])
+                gt.append([x, y, z, theta, phi])
                 png.from_array(framebuffer,
                                'RGB').save(root / 'images' /
                                            f'{(frame-3)//3:05d}.png')
@@ -141,6 +141,8 @@ def render(n_samples, imgsize, root='./cubes', show=False):
             phi = np.random.random_sample() * 180
             x, y = np.random.random_sample(2) * (max_xy -
                                                  min_xy) + min_xy
+            if not fixed_z:
+                z = np.random.random_sample() * (max_xy - min_xy) + min_xy
 
         window.clear()
 
@@ -160,7 +162,7 @@ def render(n_samples, imgsize, root='./cubes', show=False):
 
         # Translate cube
         if (frame - 1) % 3 != 2:
-            glm.translate(model, x, y, 0)
+            glm.translate(model, x, y, z)
 
         cube['u_model'] = model
         cube['u_normal'] = np.array(np.matrix(np.dot(view, model)).I.T)
