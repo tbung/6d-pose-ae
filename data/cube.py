@@ -81,6 +81,11 @@ def render(n_samples, imgsize, root='./cubes', show=False):
     pbar = tqdm.tqdm(total=n_samples, dynamic_ncols=True)
     root = Path(root)
     root.mkdir(exist_ok=True)
+    (root / 'no_rotation').mkdir(exist_ok=True)
+    (root / 'no_translation').mkdir(exist_ok=True)
+    (root / 'images').mkdir(exist_ok=True)
+    gt = []
+    x = y = theta = phi = 0
 
     with open('cube.vert') as f:
         vertex = f.read()
@@ -109,7 +114,33 @@ def render(n_samples, imgsize, root='./cubes', show=False):
 
     @window.event
     def on_draw(dt):
-        nonlocal frame
+        nonlocal frame, x, y, theta, phi
+
+        # Export screenshot
+        gl.glReadPixels(0, 0, window.width,
+                        window.height, gl.GL_RGB,
+                        gl.GL_UNSIGNED_BYTE, framebuffer)
+        if frame > 2:  # Skip empty zero frame
+            if (frame) % 3 == 0:
+                pbar.update()
+                gt.append([x, y, 1, theta, phi])
+                png.from_array(framebuffer,
+                               'RGB').save(root / 'images' /
+                                           f'{(frame-3)//3:05d}.png')
+            elif (frame) % 3 == 1:
+                png.from_array(framebuffer,
+                               'RGB').save(root / 'no_rotation' /
+                                           f'{(frame-4)//3:05d}.png')
+            elif (frame) % 3 == 2:
+                png.from_array(framebuffer,
+                               'RGB').save(root / 'no_translation' /
+                                           f'{(frame-5)//3:05d}.png')
+
+        if (frame - 1) % 3 == 0:
+            theta = np.random.random_sample() * 90
+            phi = np.random.random_sample() * 180
+            x, y = np.random.random_sample(2) * (max_xy -
+                                                 min_xy) + min_xy
 
         window.clear()
 
@@ -123,27 +154,17 @@ def render(n_samples, imgsize, root='./cubes', show=False):
         # Rotate cube
         view = cube['u_view'].reshape(4, 4)
         model = np.eye(4, dtype=np.float32)
-        theta = np.random.random_sample() * 90
-        phi = np.random.random_sample() * 180
-        glm.rotate(model, theta, 0, 0, 1)
-        glm.rotate(model, phi, 0, 1, 0)
+        if (frame - 1) % 3 != 1:
+            glm.rotate(model, theta, 0, 0, 1)
+            glm.rotate(model, phi, 0, 1, 0)
 
         # Translate cube
-        x, y = np.random.random_sample(2) * (max_xy -
-                                             min_xy) + min_xy
-        glm.translate(model, x, y, 0)
+        if (frame - 1) % 3 != 2:
+            glm.translate(model, x, y, 0)
 
         cube['u_model'] = model
         cube['u_normal'] = np.array(np.matrix(np.dot(view, model)).I.T)
 
-        # Export screenshot
-        if frame:  # Skip empty zero frame
-            gl.glReadPixels(0, 0, window.width,
-                            window.height, gl.GL_RGB,
-                            gl.GL_UNSIGNED_BYTE, framebuffer)
-            png.from_array(framebuffer,
-                           'RGB').save(root / f'{frame-1:05d}.png')
-            pbar.update()
         frame += 1
 
     @window.event
@@ -158,7 +179,8 @@ def render(n_samples, imgsize, root='./cubes', show=False):
         gl.glPolygonOffset(1, 1)
         gl.glEnable(gl.GL_LINE_SMOOTH)
 
-    app.run(framecount=n_samples)
+    app.run(framecount=n_samples*3 + 2)
+    np.savetxt(root / 'target.txt', np.array(gt), delimiter='\t')
     pbar.close()
 
 
