@@ -1,7 +1,5 @@
-# -----------------------------------------------------------------------------
-# Copyright (c) 2009-2016 Nicolas P. Rougier. All rights reserved.
-# Modified by Till Bungert
-# -----------------------------------------------------------------------------
+# Adapted from
+# https://github.com/glumpy/glumpy/blob/master/examples/tutorial/light-cube-simple.py
 import numpy as np
 from glumpy import app, gl, glm, gloo
 from glumpy.ext import png
