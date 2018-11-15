@@ -124,7 +124,7 @@ def render(shape, n_samples, imgsize, fixed_z=True,
     (root / 'no_rotation').mkdir(exist_ok=True)
     (root / 'no_translation').mkdir(exist_ok=True)
     (root / 'images').mkdir(exist_ok=True)
-    gt = []
+    gt = [[n_samples, 'x', 'y', 'z', 'theta', 'phi'] ]
     x = y = z = theta = phi = 0
 
     with open('data.vert') as f:
@@ -170,7 +170,7 @@ def render(shape, n_samples, imgsize, fixed_z=True,
         if frame > 2:  # Skip empty zero frame
             if (frame) % 3 == 0:
                 pbar.update()
-                gt.append([x, y, z, theta, phi])
+                gt.append([f'{(frame-3)//3:05d}.png', x, y, z, theta, phi])
                 png.from_array(framebuffer,
                                'RGB').save(root / 'no_rotation' /
                                            f'{(frame-3)//3:05d}.png')
@@ -230,7 +230,10 @@ def render(shape, n_samples, imgsize, fixed_z=True,
         gl.glEnable(gl.GL_LINE_SMOOTH)
 
     app.run(framecount=n_samples*3 + 2)
-    np.savetxt(root / 'target.txt', np.array(gt), delimiter='\t')
+    #print(gt)
+    gt = np.array(gt)
+    #print(gt)
+    np.savetxt(root / 'target.txt', gt, delimiter='\t', fmt='%s')
     pbar.close()
 
 
