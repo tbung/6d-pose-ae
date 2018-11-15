@@ -172,11 +172,11 @@ def render(shape, n_samples, imgsize, fixed_z=True,
                 pbar.update()
                 gt.append([x, y, z, theta, phi])
                 png.from_array(framebuffer,
-                               'RGB').save(root / 'images' /
+                               'RGB').save(root / 'no_rotation' /
                                            f'{(frame-3)//3:05d}.png')
             elif (frame) % 3 == 1:
                 png.from_array(framebuffer,
-                               'RGB').save(root / 'no_rotation' /
+                               'RGB').save(root / 'images' /
                                            f'{(frame-4)//3:05d}.png')
             elif (frame) % 3 == 2:
                 png.from_array(framebuffer,
