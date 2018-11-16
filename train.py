@@ -194,7 +194,7 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
 if __name__ == "__main__":
     model = Model(w=128)
     optimizer = torch.optim.Adam(model.parameters(), 0.0001)
-    sched = torch.optim.lr_scheduler.StepLR(optimizer, 100, 0.1)
+    sched = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.1)
     trainer = Trainer(None, None)
 
     loss_module = Loss_Module(bootstrap_L2, lat_rot_loss)
