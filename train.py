@@ -15,28 +15,28 @@ from model import Model
 
 class Trainer:
     def __init__(self, image_dir, attr_path, mean, std):
-        self.loader = get_loader('./data/square/images',
-                                 './data/square/target.txt',
+        self.loader = get_loader('./data/cube/images',
+                                 './data/cube/target.txt',
                                  selected_attrs=None, image_size=128,
                                  batch_size=64, dataset='Geometric',
                                  mode='train', num_workers=4, pin_memory=True,
                                  mean = [mean]*3, std = [std]*3)
-        self.rot_loader = get_loader('./data/square/no_translation',
-                                    './data/square/target.txt',
+        self.rot_loader = get_loader('./data/cube/no_translation',
+                                    './data/cube/target.txt',
                                     selected_attrs=None, image_size=128,
                                     batch_size=64, dataset='Geometric',
                                     mode='train', num_workers=4,
                                     pin_memory=True,
                                     mean = [mean]*3, std = [std]*3)
-        self.loader_test = get_loader('./data/square/images',
-                                      './data/square/target.txt',
+        self.loader_test = get_loader('./data/cube/images',
+                                      './data/cube/target.txt',
                                       selected_attrs=None, image_size=128,
                                       batch_size=64, dataset='Geometric',
                                       mode='test', num_workers=4,
                                       pin_memory=True,
                                     mean = [mean]*3, std = [std]*3)
-        self.rot_loader_test = get_loader('./data/square/no_translation',
-                                          './data/square/target.txt',
+        self.rot_loader_test = get_loader('./data/cube/no_translation',
+                                          './data/cube/target.txt',
                                           selected_attrs=None, image_size=128,
                                           batch_size=64, dataset='Geometric',
                                           mode='test', num_workers=4,
@@ -177,7 +177,7 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
                                  trainer.global_step)
 
             all_z.append(z[0])
-            all_angles.append(label2[:, 3])
+            all_angles.append(label2[:, 3:])
 
             loss = loss_mod([x2], x_, z)
             # loss = [torch.nn.functional.mse_loss(x2, x_[0])]
@@ -188,24 +188,21 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
     all_z = torch.cat(all_z, dim=0)
     all_angles = torch.cat(all_angles, dim=0)
 
-    fig, ax = plt.subplots()
-    ax.scatter(all_angles, all_z[:, 0], s=2)
-    ax.set(xlabel='$\\theta$', ylabel='z')
-    writer.add_figure('test/z0', fig, trainer.global_step)
-
-    fig, ax = plt.subplots()
-    ax.scatter(all_angles, all_z[:, 1], s=2)
-    ax.set(xlabel='$\\theta$', ylabel='z')
-    writer.add_figure('test/z1', fig, trainer.global_step)
+    for i in range(model.split):
+        for j, name in enumerate(['theta', 'phi']):
+            fig, ax = plt.subplots()
+            ax.scatter(all_angles[:, j], all_z[:, i], s=2)
+            ax.set(xlabel=f'$\\{name}$', ylabel='z')
+            writer.add_figure(f'test/z{i}_{name}', fig, trainer.global_step)
 
     return losses
 
 
 if __name__ == "__main__":
-    model = Model(w=128)
+    model = Model(split=3, w=128)
     optimizer = torch.optim.Adam(model.parameters(), 0.0001)
-    sched = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.1)
+    sched = torch.optim.lr_scheduler.StepLR(optimizer, 30, 0.1)
     trainer = Trainer(None, None, 0, 1)
 
     loss_module = Loss_Module(bootstrap_L2, lat_rot_loss)
-    trainer.train(model, 50, optimizer, sched, loss_module, 'cuda')
+    trainer.train(model, 100, optimizer, sched, loss_module, 'cuda')
