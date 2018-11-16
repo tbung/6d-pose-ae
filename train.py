@@ -128,7 +128,7 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
         x2 = x2.to(device)
         z, x_ = model(x1)
 
-        with torch.no_grad:
+        with torch.no_grad():
             x1 = x1 * trainer.std - trainer.mean
             x2 = x2 * trainer.std - trainer.mean
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     model = Model(w=128)
     optimizer = torch.optim.Adam(model.parameters(), 0.0001)
     sched = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.1)
-    trainer = Trainer(None, None)
+    trainer = Trainer(None, None, 0, 1)
 
     loss_module = Loss_Module(bootstrap_L2, lat_rot_loss)
     trainer.train(model, 50, optimizer, sched, loss_module, 'cuda')
