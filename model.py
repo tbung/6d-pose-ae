@@ -8,6 +8,10 @@ def normal_init(m, mean, std):
         m.weight.data.normal_(mean, std)
         m.bias.data.zero_()
 
+def weight_init(model, mean, std):
+        for m in model._modules:
+            normal_init(model._modules[m], mean, std)
+
 
 class Encoder(nn.Module):
     #initializers
@@ -30,10 +34,6 @@ class Encoder(nn.Module):
         self.fc     = nn.Linear(self.size, z_dim, bias = False)
         self.z_dim  = z_dim  
 
-    # weight_init
-    def weight_init(self, mean, std):
-        for m in self._modules:
-            normal_init(self._modules[m], mean, std)
 
     # forward method
     def forward(self, input):
@@ -74,12 +74,6 @@ class Decoder(nn.Module):
         self.conv3  = nn.Conv2d(d*2, d, k, st, pad)
         self.conv4  = nn.Conv2d(d, chan, k, st, pad)
 
-
-    # weight_init
-    def weight_init(self, mean, std):
-        for m in self._modules:
-            normal_init(self._modules[m], mean, std)
-
     # forward method
     def forward(self, input):
         # x = F.relu(self.deconv1(input))
@@ -100,7 +94,38 @@ class Decoder(nn.Module):
 
         return x
 
+class Model(nn.Module):
+    # initializers
+    def __init__(self, split = 2 ,z_dim = 4,chan = 3,w = 64,d = 64):
+        super(Model, self).__init__()
+        self.encoder = Encoder(z_dim=z_dim, chan=chan, w=w, d=d)
+
+        self.dec1    = Decoder(z_dim=split, chan=chan, w=w, d=d) 
+        self.dec2    = Decoder(z_dim=z_dim-split, chan=chan, w=w, d=d)
+        self.split   = split
+
+    # forward method
+    def forward(self, x, mode = 'no_trans'):
+        """ 3 Different modes of forward:
+        1. no_trans -> z1 encodes rotation      output: z1, x_rot
+        2. no_rot   -> z2 encoder translation   output: z2, x_trans
+        3. both     -> 1. & 2. combined         output: [z1,z2], [x_rot, x_trans]"""
+        z   = self.encoder(x)
+        z1  = z[:,:self.split].contiguous()
+        z2  = z[:,self.split:].contiguous()
+        
+        if mode == 'no_trans':
+            return z1, self.dec1(z1)
+        
+        elif mode == 'no_rot':
+            return z2, self.dec2(z2)
+
+        else:
+            return [z1, z2], [self.dec1(z1), self.dec2(z2)]
+
+
 def main():
+    print("Test of single modules Encoder & Decoder")
     test_batch  = torch.randn(6, 3, 64, 64)
     print("shape of input for encoder")
     print(test_batch.shape)
@@ -113,6 +138,14 @@ def main():
     test_rec    = decoder(test_z)
     print("shape of output of the decoder")
     print(test_rec.shape)
+
+    print("\n \n Test of the combined model")
+    model       = Model(chan = 3)
+    z_, x_      = model(test_batch, mode='both')
+    print('Shapes of z1 & z2')
+    print(z_[0].shape, z_[1].shape)
+    print('Shapes of x1 & x2')
+    print(x_[0].shape, x_[1].shape)
 
 if __name__ == "__main__":
     main()
