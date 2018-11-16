@@ -1,5 +1,5 @@
 import torch.nn as nn
-import torch.nn.functional as functional
+import torch.nn.functional as F
 import torch
 
 
@@ -26,6 +26,21 @@ class Loss_Module(nn.Module):
 
         return l
 
+
+def weighted_L2(x,y):
+    l2  =  (x-y)**2
+    b   = l2.size(0)
+    l2  = l2.view(b, -1)
+    mask = F.softmax(l2, dim = 1)
+    wl2 = mask * l2 
+    return wl2.sum()/b
+
+def lat_rot_loss(z):
+    
+
+
+
+
 def main():
     print("Test of single modules Encoder & Decoder")
     zero_batch  = torch.zeros(6, 3, 64, 64)
@@ -37,6 +52,16 @@ def main():
     loss_0      =  loss_mod([zero_batch,zero_batch], [zero_batch, ones_batch], [z0, z1])
 
     print(loss_0)
+
+
+    print("\n \n Test weighted_L2 ")
+    mask_test = torch.randn(4, 3, 3, 3)
+    mask_0    = torch.zeros(4, 3, 3, 3)
+    wl2       = weighted_L2(mask_test, mask_0)
+    l2        = ((mask_test - mask_0)**2).mean()
+    print(wl2)
+    print(l2)
+
 
 
 if __name__ == "__main__":
