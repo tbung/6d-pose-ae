@@ -133,10 +133,10 @@ class Model(nn.Module):
         z2  = z[:,self.split:].contiguous()
         
         if mode == 'no_trans':
-            return [z1], [self.dec1(z1)]
+            return [z1, False], [self.dec1(z1), False]
         
         elif mode == 'no_rot':
-            return [z2], [self.dec2(z2)]
+            return [False, z2], [False, self.dec2(z2)]
 
         else:
             return [z1, z2], [self.dec1(z1), self.dec2(z2)]
