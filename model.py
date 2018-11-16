@@ -90,7 +90,7 @@ class Decoder(nn.Module):
         x = F.relu((self.conv3(x)))
         x = F.interpolate(x, scale_factor= 2)
 
-        x = F.relu((self.conv4(x)))
+        x = torch.tanh(self.conv4(x))
 
         return x
 
