@@ -53,3 +53,34 @@ def create_folder(folder):
         os.makedirs(os.path.dirname(path))
     print('Folder created.')
     print(path)
+
+
+# Test the nearest_cosine function with indices
+def get_nearest_cosine(z, z_book):
+    with torch.no_grad():
+        z_  = z/(torch.norm(z, p=2, dim=1)[:, None])
+        z_cos= (z_[:, None, :] * z_book[None, :, :]).sum(dim=2)
+        vals, ind = z_cos.topk(20 ,dim=1)
+    return vals, ind
+
+# Creating the codebook with a set data_loader 
+def create_codebook(model, train, data_loader, device):
+    model = model.to(device)
+    z1_book = []
+    z2_book = []
+    for i, (x, label) in enumerate(data_loader):
+        x   = x.to(device)
+        z   = model.encoder(x)
+        z1  = z[:,:model.split]
+        z2  = z[:, model.split:]
+        z1  = z1/(torch.norm(z1, p=2, dim=1))
+        z2  = z2/(torch.norm(z1, p=2, dim=1)) # z2 will be assumed to be 4dim with norm also set to 1
+        z1_book.append(z1)
+        z2_book.append(z2)
+
+    z1_book = torch.stack(z1_book, dim=0)
+    z2_book = torch.stack(z2_book, dim=0)
+
+        
+        
+      
