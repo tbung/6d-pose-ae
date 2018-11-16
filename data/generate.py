@@ -172,11 +172,11 @@ def render(shape, n_samples, imgsize, fixed_z=True,
                 pbar.update()
                 gt.append([f'{(frame-3)//3:05d}.png', x, y, z, theta, phi])
                 png.from_array(framebuffer,
-                               'RGB').save(root / 'no_rotation' /
+                               'RGB').save(root / 'images' /
                                            f'{(frame-3)//3:05d}.png')
             elif (frame) % 3 == 1:
                 png.from_array(framebuffer,
-                               'RGB').save(root / 'images' /
+                               'RGB').save(root / 'no_rotation' /
                                            f'{(frame-4)//3:05d}.png')
             elif (frame) % 3 == 2:
                 png.from_array(framebuffer,
@@ -229,7 +229,7 @@ def render(shape, n_samples, imgsize, fixed_z=True,
         gl.glPolygonOffset(1, 1)
         gl.glEnable(gl.GL_LINE_SMOOTH)
 
-    app.run(framecount=n_samples*3 + 2)
+    app.run(framecount=n_samples*3 + 2, framerate=0)
     #print(gt)
     gt = np.array(gt)
     #print(gt)
