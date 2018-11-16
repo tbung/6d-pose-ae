@@ -5,11 +5,11 @@ import torch
 import os
 import random
 
-
+###FIX AMOUNT OF DATA LOADED DURCH BATCH###
 class GeometricDataset(data.Dataset):
     """Dataset class for gemoetric shapes."""
 
-    def __init__(self, image_dir, attr_path, transform, selected_attrs = None, mode = 'Train'):
+    def __init__(self, image_dir, attr_path, transform, selected_attrs = None, mode = 'train'):
         """Init and preprocess dataset"""
         self.image_dir  = image_dir
         self.attr_path  = attr_path
@@ -21,8 +21,9 @@ class GeometricDataset(data.Dataset):
         self.attr2idx   = {}
         self.idx2attr   = {}
         self.preprocess()
+        
 
-        if mode == 'Train':
+        if mode == 'train':
             self.num_images     = len(self.train_dataset)
 
         else:
@@ -31,14 +32,21 @@ class GeometricDataset(data.Dataset):
     def preprocess(self):
         """Prepocess the geometric attribute file """
         lines   = [line.rstrip() for line in open(self.attr_path, 'r')]
-        all_attr_names  = lines[1].split()
+        all_attr_names  = lines[0].split()
+
+        size    = 0
         for i, attr_name in enumerate(all_attr_names):
-            self.attr2idx[attr_name] = i
-            self.idx2attr[i]
+            if i == 0:
+                size    = int(attr_name)
+                print(size)
+                continue
+            k = i -1
+            self.attr2idx[attr_name] = k
+            self.idx2attr[k] = attr_name
 
         if self.selected_attrs is None: self.selected_attrs = all_attr_names[1:]
 
-        lines = lines[2:]
+        lines = lines[1:]
         random.seed(1)
         random.shuffle(lines)
         for i, line in enumerate(lines):
@@ -49,9 +57,9 @@ class GeometricDataset(data.Dataset):
             label = []
             for attr_name in self.selected_attrs:
                 idx = self.attr2idx[attr_name]
-                label.append(values[idx])
+                label.append(float(values[idx]))
 
-            if (i+1) < 2000:
+            if (i) < size // 4:
                 self.test_dataset.append([filename, label])
             else:
                 self.train_dataset.append([filename, label])
@@ -69,7 +77,7 @@ class GeometricDataset(data.Dataset):
         return self.num_images
 
 def get_loader(image_dir, attr_path, selected_attrs = None, image_size=64, 
-               batch_size=16, dataset='Geometric', mode='train', num_workers=1, pin_memory = False, 
+               batch_size=16, dataset='Geometric', mode='train', num_workers=4, pin_memory = True, 
                mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5]):
     """Build and return a data loader."""
     transform = []
@@ -87,4 +95,20 @@ def get_loader(image_dir, attr_path, selected_attrs = None, image_size=64,
                                   num_workers= num_workers,
                                   pin_memory = pin_memory)
     return data_loader
+
+
+def main():
+    test_laod = get_loader('./data/square/images', './data/square/target.txt', image_size= 64, batch_size= 12, mode= 'train')
+    test_img, test_label = next(iter(test_laod))
+    print("Shape of the image batch")
+    print(test_img.shape)
+    print("Shape of the label batch")
+    print(test_label.shape)
+    print("First Label")
+    print(test_label[0])
+    print("Amount of images in train")
+    print(len(test_laod.dataset))
+
+if __name__ == "__main__":
+    main()
 
