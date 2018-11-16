@@ -156,8 +156,12 @@ def render(shape, n_samples, imgsize, fixed_z=True,
     cube['u_texture'] = mono()
     cube['u_model'] = np.eye(4, dtype=np.float32)
     cube['u_view'] = glm.translation(0, 0, -7)
-    min_xy, max_xy = -2, 2
-    min_z, max_z = -1, 3
+    if shape == 'square':
+        min_xy, max_xy = -2, 2
+        min_z, max_z = -1, 3
+    elif shape == 'cube':
+        min_xy, max_xy = -1.7, 1.7
+        min_z, max_z = -3, 1.8
     frame = 0
 
     @window.event
