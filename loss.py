@@ -27,6 +27,7 @@ class Loss_Module(nn.Module):
         return l
 
 
+# reconstruction loss alternative to bootstrapped L2
 def weighted_L2(x,y):
     l2  =  (x-y)**2
     b   = l2.size(0)
@@ -35,8 +36,11 @@ def weighted_L2(x,y):
     wl2 = mask * l2 
     return wl2.sum()/b
 
+# rot latent loss forcing the norm of z to 1
 def lat_rot_loss(z):
-    
+    l   = torch.abs(torch.norm(z, p=2, dim=0)-1.)
+    return l
+
 
 
 
