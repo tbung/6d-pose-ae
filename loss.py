@@ -20,7 +20,7 @@ class Loss_Module(nn.Module):
 
             if self.l_lat is not None:
                 v += 1
-                l[v] += self.l_lat(zr) /zr.size(0)
+                l[v] += self.l_lat(zr)
 
         l[0] += l.sum()
 

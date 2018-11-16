@@ -7,7 +7,7 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
 from pathlib import Path
-from loss import Loss_Module, weighted_L2, lat_rot_loss
+from loss import Loss_Module, bootstrap_L2, lat_rot_loss
 from data_loader import get_loader
 from model import Model
 from utils import *
@@ -179,12 +179,12 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
     all_angles = torch.cat(all_angles, dim=0)
 
     fig, ax = plt.subplots()
-    ax.scatter(all_angles, all_z[:, 0])
+    ax.scatter(all_angles, all_z[:, 0], s=2)
     ax.set(xlabel='$\\theta$', ylabel='z')
     writer.add_figure('test/z0', fig, trainer.global_step)
 
     fig, ax = plt.subplots()
-    ax.scatter(all_angles, all_z[:, 1])
+    ax.scatter(all_angles, all_z[:, 1], s=2)
     ax.set(xlabel='$\\theta$', ylabel='z')
     writer.add_figure('test/z1', fig, trainer.global_step)
 
@@ -193,9 +193,9 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
 
 if __name__ == "__main__":
     model = Model(w=128)
-    optimizer = torch.optim.SGD(model.parameters(), 0.001)
-    sched = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.1)
+    optimizer = torch.optim.Adam(model.parameters(), 0.0001)
+    sched = torch.optim.lr_scheduler.StepLR(optimizer, 100, 0.1)
     trainer = Trainer(None, None)
 
-    loss_module = Loss_Module(weighted_L2, None)
+    loss_module = Loss_Module(bootstrap_L2, lat_rot_loss)
     trainer.train(model, 20, optimizer, sched, loss_module, 'cuda')
