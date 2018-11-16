@@ -38,7 +38,7 @@ def weighted_L2(x,y):
 
 # rot latent loss forcing the norm of z to 1
 def lat_rot_loss(z):
-    l   = (torch.abs(torch.norm(z, p=2, dim=0)-1.)).mean()
+    l   = (torch.abs(torch.norm(z, p=2, dim=1)-1.)).mean()
     return l
 
 
@@ -56,7 +56,7 @@ def main():
     zero_batch  = torch.zeros(6, 3, 64, 64)
     ones_batch  = torch.ones(6, 3, 64, 64)
     z1          = torch.randn(6,2)
-    z0         = torch.zeros(6,2)
+    z0          = torch.zeros(6,2)
     loss_mod = Loss_Module(nn.MSELoss(), torch.norm )
     print("loss_0")
     loss_0      =  loss_mod([zero_batch,zero_batch], [zero_batch, ones_batch], [z0, z1])
@@ -72,6 +72,17 @@ def main():
     print(wl2)
     print(l2)
 
+    print("\n \n Test lat_rot_loss")
+    z0 = torch.randn(6,2)
+    norm = torch.norm(z0, p=2, dim=1)
+    print(norm.shape)
+    z1  = z0/norm[:, None]
+    print("z0 and corresponding loss")
+    print (z0)
+    print(lat_rot_loss(z0))
+    print("normed to 1 z1 and corresponding loss")
+    print(z1)
+    print(lat_rot_loss(z1))
 
 if __name__ == "__main__":
     main()
