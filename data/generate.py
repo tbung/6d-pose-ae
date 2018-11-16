@@ -156,7 +156,8 @@ def render(shape, n_samples, imgsize, fixed_z=True,
     cube['u_texture'] = mono()
     cube['u_model'] = np.eye(4, dtype=np.float32)
     cube['u_view'] = glm.translation(0, 0, -7)
-    min_xy, max_xy = -3, 3
+    min_xy, max_xy = -2, 2
+    min_z, max_z = -1, 3
     frame = 0
 
     @window.event
@@ -188,7 +189,7 @@ def render(shape, n_samples, imgsize, fixed_z=True,
             x, y = np.random.random_sample(2) * (max_xy -
                                                  min_xy) + min_xy
             if not fixed_z:
-                z = np.random.random_sample() * (max_xy - min_xy) + min_xy
+                z = np.random.random_sample() * (max_z - min_z) + min_z
             if shape == 'cube':
                 phi = np.random.random_sample() * 360
 
