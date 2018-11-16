@@ -12,16 +12,24 @@ class Loss_Module(nn.Module):
         self.l_lat   = loss_lat
 
     # forward pass
-    def forward(self, x, x_ , z):
+    def forward(self, x, x_ , z, mode='no_trans'):
         l = x[0].new_zeros(5)
         v = 0
-        for (xr, x_r, zr) in zip (x, x_, z):
+        if mode == 'no_rot': 
+            x.insert(0, False)
+            v += 2
+        if mode == 'no_trans':
+            x.append(False)
+        for i ,(xr, x_r, zr) in enumerate(zip (x, x_, z)):
+            if mode =='no_rot' and i==0: continue
             v += 1
             l[v] += self.l_rec(x_r, xr)
 
             if self.l_lat is not None:
                 v += 1
                 l[v] += self.l_lat(zr)
+
+            if mode =='no_trans' and i== 0: break
 
         l[0] += l.sum()
 
@@ -132,9 +140,15 @@ def main():
     z0          = torch.zeros(6,2)
     loss_mod = Loss_Module(nn.MSELoss(), torch.norm )
     print("loss_0")
-    loss_0      =  loss_mod([zero_batch,zero_batch], [zero_batch, ones_batch], [z0, z1])
-
+    loss_0      =  loss_mod([zero_batch,zero_batch], [ones_batch, ones_batch], [z0, z1], mode ='both')
     print(loss_0)
+
+    print("loss_1")
+    loss_1      =  loss_mod([zero_batch,zero_batch], [ones_batch, ones_batch], [z0, z1], mode ='no_trans')
+    print(loss_1)
+    print("loss_2")
+    loss_2      =  loss_mod([zero_batch,zero_batch], [ones_batch, ones_batch], [z0, z1], mode ='no_rot')
+    print(loss_2)
 
 
     print("\n \n Test weighted_L2 ")
