@@ -12,19 +12,38 @@ def weight_init(model, mean, std):
         for m in model._modules:
             normal_init(model._modules[m], mean, std)
 
+class Upsample(nn.Module):
+    def __init__(self,factor=2):
+        super(Upsample, self).__init__()
+        self.factor = factor
+
+    def forward(self,x):
+        return F.interpolate(x, scale_factor=self.factor)
+
+
 
 class Encoder(nn.Module):
     #initializers
-    def __init__(self,z_dim = 2 ,chan = 1,w = 64,d = 64):
+    def __init__(self,z_dim = 2 ,chan = 1,w = 64,d = 64, leaky = 0, batch_norm=False):
         super(Encoder, self).__init__()
 
         k           = 3
         pad         = 0 
         st          = 2
-        self.conv1  = nn.Conv2d(chan, d, k, stride=st, padding=pad )
-        self.conv2  = nn.Conv2d(d, d * 2, k, stride=st, padding=pad)
-        self.conv3  = nn.Conv2d(d*2, d*2, k, st, pad)
-        self.conv4  = nn.Conv2d(d*2, d*4, k, st, pad)
+        dims        = [chan, d, d*2, d*2, d*4]
+
+        if leaky  > 0:  self.activ = nn.LeakyReLU()
+        else:           self.activ = nn.ReLU()  
+        
+        module_list = []
+        for i in range(len(dims)-1):
+            module_list.append(nn.Conv2d(dims[i], dims[i+1], k, stride=st, padding=pad, bias=not batch_norm ))
+            module_list.append(self.activ)
+            if batch_norm is True: module_list.append(nn.BatchNorm2d(dims[i+1]))
+
+
+        self.seq    = nn.Sequential(*module_list)
+
 
         conv_size   = w
         for i in range (0, 4):
@@ -37,10 +56,8 @@ class Encoder(nn.Module):
 
     # forward method
     def forward(self, input):
-        x = F.relu((self.conv1(input)))
-        x = F.relu((self.conv2(x)))
-        x = F.relu((self.conv3(x)))
-        x = F.relu((self.conv4(x)))
+        x = self.seq(input)
+
         x = x.view(-1, self.size)
 
         x = self.fc(x)
@@ -51,7 +68,7 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
     # initializers
-    def __init__(self, z_dim = 2,chan = 1,w = 64,d = 64):
+    def __init__(self,z_dim = 2 ,chan = 1,w = 64,d = 64, leaky = 0, batch_norm=False):
         super(Decoder, self).__init__()
         factor_ups  = 2**4
         fc_out      = w /factor_ups
@@ -67,41 +84,41 @@ class Decoder(nn.Module):
         k           = 3
         pad         = 1 
         st          = 1
+        dims        = [d*4, d*2, d*2, d, chan]
+
+        if leaky  > 0:  self.activ = nn.LeakyReLU()
+        else:           self.activ = nn.ReLU()  
 
 
-        self.conv1  = nn.Conv2d(d*4, d*2, k, st, pad)
-        self.conv2  = nn.Conv2d(d*2, d*2, k, st, pad)
-        self.conv3  = nn.Conv2d(d*2, d, k, st, pad)
-        self.conv4  = nn.Conv2d(d, chan, k, st, pad)
+        module_list = []
+        for i in range(len(dims)-2):
+            module_list.append(nn.Conv2d(dims[i], dims[i+1], k, stride=st, padding=pad, bias=not batch_norm ))
+            module_list.append(self.activ)
+            if batch_norm is True: module_list.append(nn.BatchNorm2d(dims[i+1]))
+            module_list.append(Upsample())
+        module_list.append(nn.Conv2d(dims[-2], dims[-1], k, stride=st, padding=pad, bias= True ))
+
+        self.seq    = nn.Sequential(*module_list)
 
     # forward method
     def forward(self, input):
-        # x = F.relu(self.deconv1(input))
+
         x = self.fc(input)
         x = x.view(-1, self.d*4, self.fc_out, self.fc_out)
-        x = F.interpolate(x, scale_factor= 2)
+        x = self.seq(x)
 
-        x = F.relu((self.conv1(x)))
-        x = F.interpolate(x, scale_factor= 2)
-
-        x = F.relu((self.conv2(x)))
-        x = F.interpolate(x, scale_factor= 2)
-
-        x = F.relu((self.conv3(x)))
-        x = F.interpolate(x, scale_factor= 2)
-
-        x = torch.tanh(self.conv4(x))
+        x = torch.sigmoid  (x)
 
         return x
 
 class Model(nn.Module):
     # initializers
-    def __init__(self, split = 2 ,z_dim = 4,chan = 3,w = 64,d = 64):
+    def __init__(self, split = 2 , z_dim = 4, chan = 3, w = 64, d = 64, leaky = 0, batch_norm=False):
         super(Model, self).__init__()
-        self.encoder = Encoder(z_dim=z_dim, chan=chan, w=w, d=d)
+        self.encoder = Encoder(z_dim=z_dim, chan=chan, w=w, d=d, leaky=leaky, batch_norm=batch_norm)
 
-        self.dec1    = Decoder(z_dim=split, chan=chan, w=w, d=d) 
-        self.dec2    = Decoder(z_dim=z_dim-split, chan=chan, w=w, d=d)
+        self.dec1    = Decoder(z_dim=split, chan=chan, w=w, d=d, leaky=leaky, batch_norm=batch_norm) 
+        self.dec2    = Decoder(z_dim=z_dim-split, chan=chan, w=w, d=d, leaky=leaky, batch_norm=batch_norm)
         self.split   = split
 
     # forward method
@@ -140,7 +157,7 @@ def main():
     print(test_rec.shape)
 
     print("\n \n Test of the combined model")
-    model       = Model(chan = 3)
+    model       = Model(chan = 3, batch_norm=True, leaky = 0.1)
     z_, x_      = model(test_batch, mode='both')
     print('Shapes of z1 & z2')
     print(z_[0].shape, z_[1].shape)
