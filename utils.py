@@ -75,11 +75,13 @@ def create_codebook(model, train, data_loader, device):
         z2  = z[:, model.split:]
         z1  = z1/(torch.norm(z1, p=2, dim=1))
         z2  = z2/(torch.norm(z1, p=2, dim=1)) # z2 will be assumed to be 4dim with norm also set to 1
-        z1_book.append(z1)
-        z2_book.append(z2)
+        z1_book.append(z1.to('cpu'))
+        z2_book.append(z2.to('cpu'))
 
     z1_book = torch.stack(z1_book, dim=0)
     z2_book = torch.stack(z2_book, dim=0)
+
+    return 
 
         
         
