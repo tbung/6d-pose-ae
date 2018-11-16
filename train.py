@@ -7,7 +7,7 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
 from pathlib import Path
-
+from loss import Loss_Module
 from data_loader import get_loader
 from model import Model
 from utils import *
@@ -124,8 +124,8 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
         x2 = x2.to(device)
         z, x_ = model(x1)
 
-        # loss = loss_mod(x2, x_, z)
-        loss = [torch.nn.functional.mse_loss(x2, x_[0])]
+        loss = loss_mod([x2], x_, z)
+        # loss = [torch.nn.functional.mse_loss(x2, x_[0])]
 
         optimizer_gen.zero_grad()
         (loss[0]).backward(retain_graph=True)
@@ -143,7 +143,7 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
 
 
 def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
-    losses = np.zeros(4, dtype=np.double)
+    losses = np.zeros(5, dtype=np.double)
     all_z = []
     all_angles = []
     plot_sample = True
@@ -169,8 +169,8 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
             all_z.append(z[0])
             all_angles.append(label2[:, 3])
 
-            # loss = loss_mod(x2, x_, z)
-            loss = [torch.nn.functional.mse_loss(x2, x_[0])]
+            loss = loss_mod([x2], x_, z)
+            # loss = [torch.nn.functional.mse_loss(x2, x_[0])]
 
             for i in range(len(loss)):
                 losses[i] += loss[i].item() * 100
@@ -196,4 +196,6 @@ if __name__ == "__main__":
     optimizer = torch.optim.SGD(model.parameters(), 0.000001)
     sched = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.1)
     trainer = Trainer(None, None)
+
+    loss_module = Loss_Module(nn.MSELoss(), None )
     trainer.train(model, 20, optimizer, sched, None, 'cuda')
