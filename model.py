@@ -97,6 +97,7 @@ class Decoder(nn.Module):
             if batch_norm is True: module_list.append(nn.BatchNorm2d(dims[i+1]))
             module_list.append(Upsample())
         module_list.append(nn.Conv2d(dims[-2], dims[-1], k, stride=st, padding=pad, bias= True ))
+        module_list.append(Upsample())
 
         self.seq    = nn.Sequential(*module_list)
 
