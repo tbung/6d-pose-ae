@@ -21,24 +21,31 @@ class Loss_Module(nn.Module):
             if self.l_lat is not None:
                 v += 1
                 l[v] += self.l_lat(zr) /zr.size(0)
-        
+
         l[0] += l.sum()
 
         return l
 
 
-def weighted_L2(x,y):
-    l2  =  (x-y)**2
-    b   = l2.size(0)
-    l2  = l2.view(b, -1)
-    mask = F.softmax(l2, dim = 1)
+def weighted_L2(x, y):
+    l2 = (x-y)**2
+    b = l2.size(0)
+    l2 = l2.view(b, -1)
+    mask = F.softmax(l2, dim=1)
     wl2 = mask * l2 
     return wl2.sum()/b
 
+
 def lat_rot_loss(z):
-    
+    pass
 
 
+def bootstrap_L2(x, y, bootstrap_ratio=4):
+    x_flat = x.flatten()
+    y_flat = y.flatten()
+    l2 = (x_flat - y_flat)**2
+    l2 = torch.topk(l2, k=l2.shape[1]/bootstrap_ratio)
+    return l2.mean()
 
 
 def main():
@@ -63,7 +70,5 @@ def main():
     print(l2)
 
 
-
 if __name__ == "__main__":
     main()
-                

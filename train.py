@@ -10,6 +10,7 @@ from pathlib import Path
 
 from data_loader import get_loader
 from model import Model
+from loss import Loss_Module, bootstrap_L2
 from utils import *
 
 
@@ -124,8 +125,7 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
         x2 = x2.to(device)
         z, x_ = model(x1)
 
-        # loss = loss_mod(x2, x_, z)
-        loss = [torch.nn.functional.mse_loss(x2, x_[0])]
+        loss = loss_mod(x2, x_, z)
 
         optimizer_gen.zero_grad()
         (loss[0]).backward(retain_graph=True)
@@ -169,8 +169,7 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
             all_z.append(z[0])
             all_angles.append(label2[:, 3])
 
-            # loss = loss_mod(x2, x_, z)
-            loss = [torch.nn.functional.mse_loss(x2, x_[0])]
+            loss = loss_mod(x2, x_, z)
 
             for i in range(len(loss)):
                 losses[i] += loss[i].item() * 100
@@ -193,7 +192,8 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
 
 if __name__ == "__main__":
     model = Model()
+    loss_mod = Loss_Module(bootstrap_L2)
     optimizer = torch.optim.SGD(model.parameters(), 0.000001)
     sched = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.1)
     trainer = Trainer(None, None)
-    trainer.train(model, 20, optimizer, sched, None, 'cuda')
+    trainer.train(model, 20, optimizer, sched, loss_mod, 'cuda')
