@@ -125,7 +125,7 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
         z, x_ = model(x1)
 
         # loss = loss_mod(x2, x_, z)
-        loss = [torch.nn.functional.mse_loss(x2, x_)]
+        loss = [torch.nn.functional.mse_loss(x2, x_[0])]
 
         optimizer_gen.zero_grad()
         (loss[0]).backward(retain_graph=True)
@@ -170,7 +170,7 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
             all_angles.append(label2[:, 3])
 
             # loss = loss_mod(x2, x_, z)
-            loss = [torch.nn.functional.mse_loss(x2, x_)]
+            loss = [torch.nn.functional.mse_loss(x2, x_[0])]
 
             for i in range(len(loss)):
                 losses[i] += loss[i].item() * 100
