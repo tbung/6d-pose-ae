@@ -146,11 +146,25 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
     losses = np.zeros(4, dtype=np.double)
     all_z = []
     all_angles = []
+    plot_sample = True
     for (x1, label1), (x2, label2) in tqdm(zip(loader, eval_loader)):
         with torch.no_grad():
             x1 = x1.to(device)
             x2 = x2.to(device)
             z, x_ = model(x1)
+
+            if plot_sample:
+                plot_sample = False
+                print(x1.mean(), x1.min(), x1.max(), x1.shape)
+                writer.add_images('test/input',
+                                 x1.add(1).mul(0.5).cpu(),
+                                 trainer.global_step)
+                writer.add_images('test/target',
+                                 x2.add(1).mul(0.5),
+                                 trainer.global_step)
+                writer.add_image('test/output',
+                                 x_.add(1).mul(0.5),
+                                 trainer.global_step)
 
             all_z.append(z)
             all_angles.append(label2[:, 3])
