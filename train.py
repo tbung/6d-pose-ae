@@ -10,7 +10,7 @@ from pathlib import Path
 from loss import Loss_Module, bootstrap_L2, lat_rot_loss
 from data_loader import get_loader
 from model import Model
-from utils import *
+#from utils import *
 
 
 class Trainer:
@@ -55,12 +55,12 @@ class Trainer:
 
         self.global_step = 0
 
-        if save_dir is not None:
-            loss_array = []
-            path_im = Path('./images', 'ae', save_dir)
-            path_run = Path('./saved_models', 'ae', save_dir)
-            path_im.mkdir(parents=True, exist_ok=True)
-            path_run.mkdir(parents=True, exist_ok=True)
+        #if save_dir is not None:
+        #    loss_array = []
+        #    path_im = Path('./images', 'ae', save_dir)
+        #    path_run = Path('./saved_models', 'ae', save_dir)
+        #    path_im.mkdir(parents=True, exist_ok=True)
+        #    path_run.mkdir(parents=True, exist_ok=True)
 
         for epoch in range(1, epochs+1):
             model.train()
@@ -96,22 +96,22 @@ class Trainer:
                     )
             )
 
-            if save_dir is not None:
-                with torch.no_grad():
-                    loss_array.append(np.append(losses, losses_test))
+            #if save_dir is not None:
+            #    with torch.no_grad():
+            #        loss_array.append(np.append(losses, losses_test))
 
-                    x = next(iter(self.loader))[0].to(device)
-                    _, x_ = model(x)
-                    x_ = x_ * self.std + self.mean
-                    x_rec = x_[:, :3].clamp(0, 1).to('cpu')
-                    vutils.save_image(x_rec,
-                                      path_im / f'{epoch}_epoch_rec.png')
-                    torch.save(model.state_dict(),
-                               path_run / f'{epoch}_model.pth')
+            #        x = next(iter(self.loader))[0].to(device)
+            #        _, x_ = model(x)
+            #        x_ = x_ * self.std + self.mean
+            #        x_rec = x_[:, :3].clamp(0, 1).to('cpu')
+            #        vutils.save_image(x_rec,
+            #                          path_im / f'{epoch}_epoch_rec.png')
+            #        torch.save(model.state_dict(),
+            #                   path_run / f'{epoch}_model.pth')
 
-        if save_dir is not None:
-            loss_array = np.stack(loss_array, axis=0)
-            save_log(path_im, loss_array)
+        #if save_dir is not None:
+        #    loss_array = np.stack(loss_array, axis=0)
+        #    save_log(path_im, loss_array)
         return model
 
 
@@ -134,7 +134,7 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
         for j in range(len(loss)):
             losses[j] += loss[j].item() * 100
 
-        writer.add_scalar('train/loss', loss[0], trainer.global_step)
+        writer.add_scalar('train/loss', losses[0], trainer.global_step)
         # writer.add_scalar('train/z0', z[0].item(), global_step)
         # writer.add_scalar('train/z1', z[1].item(), global_step)
         trainer.global_step += 1
