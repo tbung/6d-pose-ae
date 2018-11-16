@@ -7,7 +7,7 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
 from pathlib import Path
-from loss import Loss_Module
+from loss import Loss_Module, bootstrap_L2, lat_rot_loss
 from data_loader import get_loader
 from model import Model
 from utils import *
@@ -17,24 +17,24 @@ class Trainer:
     def __init__(self, image_dir, attr_path):
         self.loader = get_loader('./data/square/images',
                                  './data/square/target.txt',
-                                 selected_attrs=None, image_size=64,
+                                 selected_attrs=None, image_size=128,
                                  batch_size=64, dataset='Geometric',
                                  mode='train', num_workers=4, pin_memory=True)
         self.rot_loader = get_loader('./data/square/no_translation',
                                      './data/square/target.txt',
-                                     selected_attrs=None, image_size=64,
+                                     selected_attrs=None, image_size=128,
                                      batch_size=64, dataset='Geometric',
                                      mode='train', num_workers=4,
                                      pin_memory=True)
         self.loader_test = get_loader('./data/square/images',
                                       './data/square/target.txt',
-                                      selected_attrs=None, image_size=64,
+                                      selected_attrs=None, image_size=128,
                                       batch_size=64, dataset='Geometric',
                                       mode='test', num_workers=4,
                                       pin_memory=True)
         self.rot_loader_test = get_loader('./data/square/no_translation',
                                           './data/square/target.txt',
-                                          selected_attrs=None, image_size=64,
+                                          selected_attrs=None, image_size=128,
                                           batch_size=64, dataset='Geometric',
                                           mode='test', num_workers=4,
                                           pin_memory=True)
@@ -117,7 +117,7 @@ class Trainer:
 
 def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
              eval_loader, device, writer, trainer):
-    losses = np.zeros(4, dtype=np.double)
+    losses = np.zeros(5, dtype=np.double)
     scheduler_gen.step()
     for i, ((x1, label1), (x2, label2)) in tqdm(enumerate(zip(loader, eval_loader))):
         x1 = x1.to(device)
@@ -179,12 +179,12 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
     all_angles = torch.cat(all_angles, dim=0)
 
     fig, ax = plt.subplots()
-    ax.scatter(all_angles, all_z[:, 0])
+    ax.scatter(all_angles, all_z[:, 0], s=2)
     ax.set(xlabel='$\\theta$', ylabel='z')
     writer.add_figure('test/z0', fig, trainer.global_step)
 
     fig, ax = plt.subplots()
-    ax.scatter(all_angles, all_z[:, 1])
+    ax.scatter(all_angles, all_z[:, 1], s=2)
     ax.set(xlabel='$\\theta$', ylabel='z')
     writer.add_figure('test/z1', fig, trainer.global_step)
 
@@ -192,10 +192,10 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
 
 
 if __name__ == "__main__":
-    model = Model()
-    optimizer = torch.optim.SGD(model.parameters(), 0.000001)
-    sched = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.1)
+    model = Model(w=128)
+    optimizer = torch.optim.Adam(model.parameters(), 0.0001)
+    sched = torch.optim.lr_scheduler.StepLR(optimizer, 100, 0.1)
     trainer = Trainer(None, None)
 
-    loss_module = Loss_Module(nn.MSELoss(), None )
-    trainer.train(model, 20, optimizer, sched, None, 'cuda')
+    loss_module = Loss_Module(bootstrap_L2, lat_rot_loss)
+    trainer.train(model, 50, optimizer, sched, loss_module, 'cuda')
