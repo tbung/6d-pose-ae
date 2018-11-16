@@ -14,38 +14,51 @@ from model import Model
 
 
 class Trainer:
-    def __init__(self, image_dir, attr_path, mean, std):
-        self.loader = get_loader('./data/cube/images',
-                                 './data/cube/target.txt',
+    def __init__(self, shape, mode, mean, std):
+        self.mode = mode
+
+        self.loader = get_loader(f'./data/{shape}/images',
+                                 f'./data/{shape}/target.txt',
                                  selected_attrs=None, image_size=128,
                                  batch_size=64, dataset='Geometric',
                                  mode='train', num_workers=4, pin_memory=True,
-                                 mean = [mean]*3, std = [std]*3)
-        self.rot_loader = get_loader('./data/cube/no_translation',
-                                    './data/cube/target.txt',
-                                    selected_attrs=None, image_size=128,
-                                    batch_size=64, dataset='Geometric',
-                                    mode='train', num_workers=4,
-                                    pin_memory=True,
-                                    mean = [mean]*3, std = [std]*3)
-        self.loader_test = get_loader('./data/cube/images',
-                                      './data/cube/target.txt',
+                                 mean=[mean]*3, std=[std]*3)
+        self.rot_loader = get_loader(f'./data/{shape}/no_translation',
+                                     f'./data/{shape}/target.txt',
+                                     selected_attrs=None, image_size=128,
+                                     batch_size=64, dataset='Geometric',
+                                     mode='train', num_workers=4,
+                                     pin_memory=True,
+                                     mean=[mean]*3, std=[std]*3)
+        self.trans_loader = get_loader(f'./data/{shape}/no_rotation',
+                                       f'./data/{shape}/target.txt',
+                                       selected_attrs=None, image_size=128,
+                                       batch_size=64, dataset='Geometric',
+                                       mode='train', num_workers=4,
+                                       pin_memory=True,
+                                       mean=[mean]*3, std=[std]*3)
+        self.loader_test = get_loader(f'./data/{shape}/images',
+                                      f'./data/{shape}/target.txt',
                                       selected_attrs=None, image_size=128,
                                       batch_size=64, dataset='Geometric',
                                       mode='test', num_workers=4,
                                       pin_memory=True,
-                                    mean = [mean]*3, std = [std]*3)
-        self.rot_loader_test = get_loader('./data/cube/no_translation',
-                                          './data/cube/target.txt',
+                                      mean=[mean]*3, std=[std]*3)
+        self.rot_loader_test = get_loader(f'./data/{shape}/no_translation',
+                                          f'./data/{shape}/target.txt',
                                           selected_attrs=None, image_size=128,
                                           batch_size=64, dataset='Geometric',
                                           mode='test', num_workers=4,
                                           pin_memory=True,
-                                          mean = [mean]*3, std = [std]*3)
-        # self.dist_loader= get_loader(image_dir, attr_path, selected_attrs =
-        # None, image_size=64,
-        #       batch_size=64, dataset='Geometric', mode='train',
-        #       num_workers=4, pin_memory = True)
+                                          mean=[mean]*3, std=[std]*3)
+        self.rot_loader_test = get_loader(f'./data/{shape}/no_rotation',
+                                          f'./data/{shape}/target.txt',
+                                          selected_attrs=None, image_size=128,
+                                          batch_size=64, dataset='Geometric',
+                                          mode='test', num_workers=4,
+                                          pin_memory=True,
+                                          mean=[mean]*3, std=[std]*3)
+
         self.mean = mean
         self.std = std
         self.f_epoch = 1 / len(self.loader)
@@ -55,16 +68,8 @@ class Trainer:
     def train(self, model, epochs, optimizer, scheduler, loss_mod, device,
               save_dir=None):
         model = model.to(device)
-        # loss_mod = loss_mod.to(device)
 
         self.global_step = 0
-
-        #if save_dir is not None:
-        #    loss_array = []
-        #    path_im = Path('./images', 'ae', save_dir)
-        #    path_run = Path('./saved_models', 'ae', save_dir)
-        #    path_im.mkdir(parents=True, exist_ok=True)
-        #    path_run.mkdir(parents=True, exist_ok=True)
 
         for epoch in range(1, epochs+1):
             model.train()
@@ -89,7 +94,8 @@ class Trainer:
                                   self)
 
             losses_test = self.f_eval * losses_test
-            self.writer.add_scalar('test/loss', losses_test[0], self.global_step)
+            self.writer.add_scalar('test/loss', losses_test[0],
+                                   self.global_step)
             print(
                     '\n'
                     'Test: \n'
@@ -100,22 +106,6 @@ class Trainer:
                     )
             )
 
-            #if save_dir is not None:
-            #    with torch.no_grad():
-            #        loss_array.append(np.append(losses, losses_test))
-
-            #        x = next(iter(self.loader))[0].to(device)
-            #        _, x_ = model(x)
-            #        x_ = x_ * self.std + self.mean
-            #        x_rec = x_[:, :3].clamp(0, 1).to('cpu')
-            #        vutils.save_image(x_rec,
-            #                          path_im / f'{epoch}_epoch_rec.png')
-            #        torch.save(model.state_dict(),
-            #                   path_run / f'{epoch}_model.pth')
-
-        #if save_dir is not None:
-        #    loss_array = np.stack(loss_array, axis=0)
-        #    save_log(path_im, loss_array)
         return model
 
 
@@ -123,7 +113,8 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
              eval_loader, device, writer, trainer):
     losses = np.zeros(5, dtype=np.double)
     scheduler_gen.step()
-    for i, ((x1, label1), (x2, label2)) in tqdm(enumerate(zip(loader, eval_loader))):
+    for i, ((x1, label1), (x2, label2)) in tqdm(enumerate(zip(loader,
+                                                              eval_loader))):
         x1 = x1.to(device)
         x2 = x2.to(device)
         z, x_ = model(x1)
@@ -133,7 +124,6 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
             x2 = x2 * trainer.std - trainer.mean
 
         loss = loss_mod([x2], x_, z)
-        # loss = [torch.nn.functional.mse_loss(x2, x_[0])]
 
         optimizer_gen.zero_grad()
         (loss[0]).backward(retain_graph=True)
@@ -142,9 +132,11 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
         for j in range(len(loss)):
             losses[j] += loss[j].item() * 100
 
-        writer.add_scalar('train/loss', losses[0], trainer.global_step)
-        # writer.add_scalar('train/z0', z[0].item(), global_step)
-        # writer.add_scalar('train/z1', z[1].item(), global_step)
+        writer.add_scalar('train/total_loss', losses[0], trainer.global_step)
+        writer.add_scalar('train/loss_rec_rotation', losses[1], trainer.global_step)
+        writer.add_scalar('train/loss_z_rotation', losses[2], trainer.global_step)
+        writer.add_scalar('train/loss_rec_translation', losses[3], trainer.global_step)
+        writer.add_scalar('train/loss_z_translation', losses[4], trainer.global_step)
         trainer.global_step += 1
 
     return losses
@@ -160,7 +152,7 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
             x1 = x1.to(device)
             x2 = x2.to(device)
             z, x_ = model(x1)
-            
+
             x1 = x1 * trainer.std - trainer.mean
             x2 = x2 * trainer.std - trainer.mean
             if plot_sample:
