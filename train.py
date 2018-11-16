@@ -198,4 +198,4 @@ if __name__ == "__main__":
     trainer = Trainer(None, None)
 
     loss_module = Loss_Module(bootstrap_L2, lat_rot_loss)
-    trainer.train(model, 20, optimizer, sched, loss_module, 'cuda')
+    trainer.train(model, 50, optimizer, sched, loss_module, 'cuda')
