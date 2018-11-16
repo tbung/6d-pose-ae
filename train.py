@@ -14,36 +14,40 @@ from model import Model
 
 
 class Trainer:
-    def __init__(self, image_dir, attr_path):
+    def __init__(self, image_dir, attr_path, mean, std):
         self.loader = get_loader('./data/square/images',
                                  './data/square/target.txt',
                                  selected_attrs=None, image_size=128,
                                  batch_size=64, dataset='Geometric',
-                                 mode='train', num_workers=4, pin_memory=True)
+                                 mode='train', num_workers=4, pin_memory=True,
+                                 mean = [mean]*3, std = [std]*3)
         self.rot_loader = get_loader('./data/square/no_translation',
-                                     './data/square/target.txt',
-                                     selected_attrs=None, image_size=128,
-                                     batch_size=64, dataset='Geometric',
-                                     mode='train', num_workers=4,
-                                     pin_memory=True)
+                                    './data/square/target.txt',
+                                    selected_attrs=None, image_size=128,
+                                    batch_size=64, dataset='Geometric',
+                                    mode='train', num_workers=4,
+                                    pin_memory=True,
+                                    mean = [mean]*3, std = [std]*3)
         self.loader_test = get_loader('./data/square/images',
                                       './data/square/target.txt',
                                       selected_attrs=None, image_size=128,
                                       batch_size=64, dataset='Geometric',
                                       mode='test', num_workers=4,
-                                      pin_memory=True)
+                                      pin_memory=True,
+                                    mean = [mean]*3, std = [std]*3)
         self.rot_loader_test = get_loader('./data/square/no_translation',
                                           './data/square/target.txt',
                                           selected_attrs=None, image_size=128,
                                           batch_size=64, dataset='Geometric',
                                           mode='test', num_workers=4,
-                                          pin_memory=True)
+                                          pin_memory=True,
+                                          mean = [mean]*3, std = [std]*3)
         # self.dist_loader= get_loader(image_dir, attr_path, selected_attrs =
         # None, image_size=64,
         #       batch_size=64, dataset='Geometric', mode='train',
         #       num_workers=4, pin_memory = True)
-        self.mean = 0.5
-        self.std = 0.5
+        self.mean = mean
+        self.std = std
         self.f_epoch = 1 / len(self.loader)
         self.f_eval = 1 / len(self.loader_test)
         self.writer = SummaryWriter()
@@ -124,6 +128,10 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
         x2 = x2.to(device)
         z, x_ = model(x1)
 
+        with torch.no_grad:
+            x1 = x1 * trainer.std - trainer.mean
+            x2 = x2 * trainer.std - trainer.mean
+
         loss = loss_mod([x2], x_, z)
         # loss = [torch.nn.functional.mse_loss(x2, x_[0])]
 
@@ -152,18 +160,20 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
             x1 = x1.to(device)
             x2 = x2.to(device)
             z, x_ = model(x1)
-
+            
+            x1 = x1 * trainer.std - trainer.mean
+            x2 = x2 * trainer.std - trainer.mean
             if plot_sample:
                 plot_sample = False
                 print(x1.mean(), x1.min(), x1.max(), x1.shape)
                 writer.add_image('test/input',
-                                 x1.add(1).mul(0.5).cpu(),
+                                 x1.cpu(),
                                  trainer.global_step)
                 writer.add_image('test/target',
-                                 x2.add(1).mul(0.5).cpu(),
+                                 x2.cpu(),
                                  trainer.global_step)
                 writer.add_image('test/output',
-                                 x_[0].add(1).mul(0.5).cpu(),
+                                 x_[0].cpu(),
                                  trainer.global_step)
 
             all_z.append(z[0])
