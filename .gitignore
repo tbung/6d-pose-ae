@@ -1,3 +1,6 @@
+# tensorboard
+runs/
+
 # Ignore dataset
 cube/
 square/
