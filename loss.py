@@ -38,7 +38,7 @@ def weighted_L2(x,y):
 
 # rot latent loss forcing the norm of z to 1
 def lat_rot_loss(z):
-    l   = torch.abs(torch.norm(z, p=2, dim=0)-1.)
+    l   = (torch.abs(torch.norm(z, p=2, dim=0)-1.)).mean()
     return l
 
 
