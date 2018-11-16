@@ -3,6 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def normal_init(m, mean, std):
+    if isinstance(m, nn.ConvTranspose2d) or isinstance(m, nn.Conv2d):
+        m.weight.data.normal_(mean, std)
+        m.bias.data.zero_()
+
 
 class Encoder(nn.Module):
     #initializers
@@ -12,8 +17,8 @@ class Encoder(nn.Module):
         k           = 3
         pad         = 0 
         st          = 2
-        self.conv1  = nn.Conv2d(chan, d, k, stride = st, padding= pad )
-        self.conv2  = nn.Conv2d(d, d * 2, k, stride=st, padding= pad)
+        self.conv1  = nn.Conv2d(chan, d, k, stride=st, padding=pad )
+        self.conv2  = nn.Conv2d(d, d * 2, k, stride=st, padding=pad)
         self.conv3  = nn.Conv2d(d*2, d*2, k, st, pad)
         self.conv4  = nn.Conv2d(d*2, d*4, k, st, pad)
 
@@ -23,13 +28,13 @@ class Encoder(nn.Module):
         self.after_conv = conv_size
         self.size   = d*4 * self.after_conv **2
         self.fc     = nn.Linear(self.size, z_dim, bias = False)
-        self.z_dim  = z_dim
-        
+        self.z_dim  = z_dim  
+
     # weight_init
     def weight_init(self, mean, std):
         for m in self._modules:
             normal_init(self._modules[m], mean, std)
-        
+
     # forward method
     def forward(self, input):
         x = F.relu((self.conv1(input)))
@@ -99,7 +104,7 @@ def main():
     test_batch  = torch.randn(6, 3, 64, 64)
     print("shape of input for encoder")
     print(test_batch.shape)
-    
+
     encoder     = Encoder(chan = 3)
     test_z      = encoder(test_batch)
     print("shape of the z")
