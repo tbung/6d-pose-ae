@@ -156,17 +156,17 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
             if plot_sample:
                 plot_sample = False
                 print(x1.mean(), x1.min(), x1.max(), x1.shape)
-                writer.add_images('test/input',
+                writer.add_image('test/input',
                                  x1.add(1).mul(0.5).cpu(),
                                  trainer.global_step)
-                writer.add_images('test/target',
-                                 x2.add(1).mul(0.5),
+                writer.add_image('test/target',
+                                 x2.add(1).mul(0.5).cpu(),
                                  trainer.global_step)
                 writer.add_image('test/output',
-                                 x_.add(1).mul(0.5),
+                                 x_[0].add(1).mul(0.5).cpu(),
                                  trainer.global_step)
 
-            all_z.append(z)
+            all_z.append(z[0])
             all_angles.append(label2[:, 3])
 
             # loss = loss_mod(x2, x_, z)
