@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 import os
+import torch.nn.functional as F
+import torch.nn as nn
 
 class tracker():
     def __init__(self):
@@ -56,33 +58,78 @@ def create_folder(folder):
 
 
 # Test the nearest_cosine function with indices
-def get_nearest_cosine(z, z_book):
+def get_nearest_cosine(z, z_book, label_book ,k, device):
+    z, z_book = z.to(device), z_book.to(device)
     with torch.no_grad():
-        z_  = z/(torch.norm(z, p=2, dim=1)[:, None])
+        z_  = torch.renorm(z)
         z_cos= (z_[:, None, :] * z_book[None, :, :]).sum(dim=2)
-        vals, ind = z_cos.topk(20 ,dim=1)
-    return vals, ind
+        vals, ind = z_cos.topk(k ,dim=1)
+    
+    labels  = label_book[ind]
+    labels  = labels.to(device)
+
+    return vals, ind, labels
+
+# Implementation of mean of KNN for regression problem
+def lazy_mean(vals, ind, labels):
+    return labels.mean(dim = 1)
+
+def weighted_mean(vals, ind, labels):
+    weights   = F.softmax(vals, dim=1)
+    print(weights.shape)
+    return (labels*weights[:,:,None]).mean()
 
 # Creating the codebook with a set data_loader 
-def create_codebook(model, train, data_loader, device):
+def create_codetensors(model, data_loader, device, step_ax = 0.1, step_rot = 1.):
     model = model.to(device)
-    z1_book = []
-    z2_book = []
+    z_rot_book = []
+    z_ax_book = []
+    axis_book = []
+    rot_book  = []
     for i, (x, label) in enumerate(data_loader):
         x   = x.to(device)
         z   = model.encoder(x)
         z1  = z[:,:model.split]
         z2  = z[:, model.split:]
-        z1  = z1/(torch.norm(z1, p=2, dim=1))
-        z2  = z2/(torch.norm(z1, p=2, dim=1)) # z2 will be assumed to be 4dim with norm also set to 1
-        z1_book.append(z1.to('cpu'))
-        z2_book.append(z2.to('cpu'))
+        z1  = torch.renorm(z1)
+        z2  = torch.renorm(z2) # z2 will be assumed to be 4dim with norm also set to 1
+        z_rot_book.append(z1.to('cpu'))
+        z_ax_book.append(z2.to('cpu'))
+        axis_book.append(label[:, :3]//step_ax)
+        rot_book.append(label[:,3:]//step_rot)
 
-    z1_book = torch.stack(z1_book, dim=0)
-    z2_book = torch.stack(z2_book, dim=0)
+    z_rot_book = torch.cat(z_rot_book, dim=0)
+    z_ax_book = torch.cat(z_ax_book, dim=0)
 
-    return 
+    axis_book = torch.cat(axis_book, dim=0)
+    rot_book = torch.cat(rot_book, dim=0)
+
+    return z_rot_book, rot_book, z_ax_book, axis_book
+
+    
+
+
+
+
+def main():
+    z = torch.ones(10,2)
+    z = torch.renorm(z)
+    z_book = torch.randn(100,2)
+    z_book = torch.renorm(z_book)
+    label_book = torch.stack([(torch.arange(0,100, dtype = torch.float)//2)]*2, dim = 1)
+    print(label_book.shape)
+    
+    vals, ind, labels = get_nearest_cosine(z, z_book, label_book ,3, 'cpu')
+    print('vals \n', vals)
+    print('ind \n', ind)
+    print('labels.shape \n', labels.shape)
+    
+    print('lazy mean \n', lazy_mean(vals, ind, labels))
+
+    print('weighted mean', weighted_mean(vals, ind, labels))
+
+
 
         
-        
-      
+if __name__ == "__main__":
+    main()
