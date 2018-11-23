@@ -16,48 +16,20 @@ from model import Model
 class Trainer:
     def __init__(self, shape, mode, mean, std):
         self.mode = mode
-
-        self.loader = get_loader(f'./data/{shape}/images',
+        self.loader = get_loader(f'./data/{shape}',
                                  f'./data/{shape}/target.txt',
                                  selected_attrs=None, image_size=128,
                                  batch_size=64, dataset='Geometric',
                                  mode='train', num_workers=4, pin_memory=True,
                                  mean=[mean]*3, std=[std]*3)
-        self.rot_loader = get_loader(f'./data/{shape}/no_translation',
-                                     f'./data/{shape}/target.txt',
-                                     selected_attrs=None, image_size=128,
-                                     batch_size=64, dataset='Geometric',
-                                     mode='train', num_workers=4,
-                                     pin_memory=True,
-                                     mean=[mean]*3, std=[std]*3)
-        self.trans_loader = get_loader(f'./data/{shape}/no_rotation',
-                                       f'./data/{shape}/target.txt',
-                                       selected_attrs=None, image_size=128,
-                                       batch_size=64, dataset='Geometric',
-                                       mode='train', num_workers=4,
-                                       pin_memory=True,
-                                       mean=[mean]*3, std=[std]*3)
-        self.loader_test = get_loader(f'./data/{shape}/images',
+
+        self.loader_test = get_loader(f'./data/{shape}',
                                       f'./data/{shape}/target.txt',
                                       selected_attrs=None, image_size=128,
                                       batch_size=64, dataset='Geometric',
                                       mode='test', num_workers=4,
                                       pin_memory=True,
                                       mean=[mean]*3, std=[std]*3)
-        self.rot_loader_test = get_loader(f'./data/{shape}/no_translation',
-                                          f'./data/{shape}/target.txt',
-                                          selected_attrs=None, image_size=128,
-                                          batch_size=64, dataset='Geometric',
-                                          mode='test', num_workers=4,
-                                          pin_memory=True,
-                                          mean=[mean]*3, std=[std]*3)
-        self.rot_loader_test = get_loader(f'./data/{shape}/no_rotation',
-                                          f'./data/{shape}/target.txt',
-                                          selected_attrs=None, image_size=128,
-                                          batch_size=64, dataset='Geometric',
-                                          mode='test', num_workers=4,
-                                          pin_memory=True,
-                                          mean=[mean]*3, std=[std]*3)
 
         self.mean = mean
         self.std = std
@@ -65,8 +37,12 @@ class Trainer:
         self.f_eval = 1 / len(self.loader_test)
         self.writer = SummaryWriter()
 
-    def train(self, model, epochs, optimizer, scheduler, loss_mod, device,
-              save_dir=None):
+    def train(self, model, epochs, optimizer, scheduler, loss_mod, device, mode = 'no_trans'):
+        """ 3 Different modes of Training the forward:
+        1. no_trans -> z1 encodes rotation      output: z1, x_rot
+        2. no_rot   -> z2 encoder translation   output: z2, x_trans
+        3. both     -> 1. & 2. combined         output: [z1,z2], [x_rot, x_trans]"""
+
         model = model.to(device)
 
         self.global_step = 0
@@ -75,7 +51,7 @@ class Trainer:
             model.train()
             print('_______________')
             losses = ae_epoch(model, loss_mod, optimizer, scheduler,
-                              self.loader, self.rot_loader, device,
+                              self.loader, mode, device,
                               self.writer, self)
 
             losses = self.f_epoch * losses
@@ -89,9 +65,8 @@ class Trainer:
 
             model.eval()
 
-            losses_test = ae_eval(model, loss_mod, self.loader_test,
-                                  self.rot_loader_test, device, self.writer,
-                                  self)
+            losses_test = ae_eval(model, loss_mod, self.loader_test, mode, 
+                                device, self.writer, self)
 
             losses_test = self.f_eval * losses_test
             self.writer.add_scalar('test/loss', losses_test[0],
@@ -108,22 +83,29 @@ class Trainer:
 
         return model
 
+    def normalize(self, x):
+        return x * self.std - self.mean
+
 
 def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
-             eval_loader, device, writer, trainer):
+             mode, device, writer, trainer):
     losses = np.zeros(5, dtype=np.double)
     scheduler_gen.step()
-    for i, ((x1, label1), (x2, label2)) in tqdm(enumerate(zip(loader,
-                                                              eval_loader))):
+    for i, (x1, x2, x3, labels) in tqdm(enumerate(loader)):
         x1 = x1.to(device)
         x2 = x2.to(device)
+        x3 = x3.to(device)
         z, x_ = model(x1)
 
         with torch.no_grad():
-            x1 = x1 * trainer.std - trainer.mean
-            x2 = x2 * trainer.std - trainer.mean
+            x1 = trainer.normalize(x1)
+            x2 = trainer.normalize(x2)
+            x3 = trainer.normalize(x3)
+        if mode == 'no_rot': val_x = [x3]
+        elif mode == 'no_trans': val_x = [x2]
+        else: val_x = [x2, x3]
 
-        loss = loss_mod([x2], x_, z)
+        loss = loss_mod(val_x, x_, z)
 
         optimizer_gen.zero_grad()
         (loss[0]).backward(retain_graph=True)
@@ -142,19 +124,29 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
     return losses
 
 
-def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
+
+def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
     losses = np.zeros(5, dtype=np.double)
     all_z = []
+    all_z_ax = []
     all_angles = []
+    all_axis = []
     plot_sample = True
-    for (x1, label1), (x2, label2) in tqdm(zip(loader, eval_loader)):
+    for i, (x1, x2, x3, label) in tqdm(enumerate(loader)):
         with torch.no_grad():
             x1 = x1.to(device)
             x2 = x2.to(device)
+            x3 = x3.to(device)
             z, x_ = model(x1)
 
-            x1 = x1 * trainer.std - trainer.mean
-            x2 = x2 * trainer.std - trainer.mean
+            x1 = trainer.normalize(x1)
+            x2 = trainer.normalize(x2)
+            x3 = trainer.normalize(x3)
+
+            if mode == 'no_rot': val_x = [x3]
+            elif mode == 'no_trans': val_x = [x2]
+            else: val_x = [x2, x3]
+
             if plot_sample:
                 plot_sample = False
                 print(x1.mean(), x1.min(), x1.max(), x1.shape)
@@ -162,30 +154,50 @@ def ae_eval(model, loss_mod, loader, eval_loader, device, writer, trainer):
                                  x1.cpu(),
                                  trainer.global_step)
                 writer.add_image('test/target',
-                                 x2.cpu(),
+                                 val_x[0].cpu(),
                                  trainer.global_step)
                 writer.add_image('test/output',
                                  x_[0].cpu(),
                                  trainer.global_step)
+                if mode == 'both':
+                    writer.add_image('test/target_1',
+                                 val_x[1].cpu(),
+                                 trainer.global_step)
+                    writer.add_image('test/output_1',
+                                    x_[1].cpu(),
+                                    trainer.global_step)
 
             all_z.append(z[0])
-            all_angles.append(label2[:, 3:])
+            all_angles.append(label[:, 3:])
+            all_axis.append(label[:,:3])
+            all_z_ax.append(z[1])
 
-            loss = loss_mod([x2], x_, z)
+
+            loss = loss_mod(val_x, x_, z)
             # loss = [torch.nn.functional.mse_loss(x2, x_[0])]
 
             for i in range(len(loss)):
                 losses[i] += loss[i].item() * 100
 
     all_z = torch.cat(all_z, dim=0)
+    all_z_ax = torch.cat(all_z_ax, dim=0)
     all_angles = torch.cat(all_angles, dim=0)
+    all_axis = torch.cat(all_axis, dim=0)
 
     for i in range(model.split):
-        for j, name in enumerate(['theta', 'phi']):
-            fig, ax = plt.subplots()
-            ax.scatter(all_angles[:, j], all_z[:, i], s=2)
-            ax.set(xlabel=f'$\\{name}$', ylabel='z')
-            writer.add_figure(f'test/z{i}_{name}', fig, trainer.global_step)
+
+        if mode != 'no_rot':
+            for j, name in enumerate(['theta', 'phi']):
+                fig, ax = plt.subplots()
+                ax.scatter(all_angles[:, j], all_z[:, i], s=2)
+                ax.set(xlabel=f'$\\{name}$', ylabel='z')
+                writer.add_figure(f'test/z{i}_{name}', fig, trainer.global_step)
+        if mode != 'no_trans':
+            for j, name in enumerate(['x', 'y', 'z']):
+                fig, ax = plt.subplots()
+                ax.scatter(all_axis[:, j], all_z_ax[:, i], s=2)
+                ax.set(xlabel=f'$\\{name}$', ylabel='z')
+                writer.add_figure(f'test/z{i}_{name}', fig, trainer.global_step)
 
     return losses
 
