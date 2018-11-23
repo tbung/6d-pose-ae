@@ -10,26 +10,21 @@ from pathlib import Path
 from loss import Loss_Module, bootstrap_L2, lat_rot_loss
 from data_loader import get_loader
 from model import Model
-#from utils import *
 
 
 class Trainer:
     def __init__(self, shape, mode, mean, std):
         self.mode = mode
-        self.loader = get_loader(f'./data/{shape}',
-                                 f'./data/{shape}/target.txt',
-                                 selected_attrs=None, image_size=128,
+        self.loader = get_loader(f'./data/{shape}', image_size=128,
                                  batch_size=64, dataset='Geometric',
                                  mode='train', num_workers=4, pin_memory=True,
                                  mean=[mean]*3, std=[std]*3)
 
-        self.loader_test = get_loader(f'./data/{shape}',
-                                      f'./data/{shape}/target.txt',
-                                      selected_attrs=None, image_size=128,
+        self.loader_test = get_loader(f'./data/{shape}', image_size=128,
                                       batch_size=64, dataset='Geometric',
                                       mode='test', num_workers=4,
-                                      pin_memory=True,
-                                      mean=[mean]*3, std=[std]*3)
+                                      pin_memory=True, mean=[mean]*3,
+                                      std=[std]*3)
 
         self.mean = mean
         self.std = std
@@ -37,7 +32,8 @@ class Trainer:
         self.f_eval = 1 / len(self.loader_test)
         self.writer = SummaryWriter()
 
-    def train(self, model, epochs, optimizer, scheduler, loss_mod, device, mode = 'no_trans'):
+    def train(self, model, epochs, optimizer, scheduler, loss_mod, device,
+              mode='no_trans'):
         """ 3 Different modes of Training the forward:
         1. no_trans -> z1 encodes rotation      output: z1, x_rot
         2. no_rot   -> z2 encoder translation   output: z2, x_trans
@@ -65,8 +61,8 @@ class Trainer:
 
             model.eval()
 
-            losses_test = ae_eval(model, loss_mod, self.loader_test, mode, 
-                                device, self.writer, self)
+            losses_test = ae_eval(model, loss_mod, self.loader_test, mode,
+                                  device, self.writer, self)
 
             losses_test = self.f_eval * losses_test
             self.writer.add_scalar('test/loss', losses_test[0],
@@ -101,9 +97,12 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
             x1 = trainer.normalize(x1)
             x2 = trainer.normalize(x2)
             x3 = trainer.normalize(x3)
-        if mode == 'no_rot': val_x = [x3]
-        elif mode == 'no_trans': val_x = [x2]
-        else: val_x = [x2, x3]
+        if mode == 'no_rot':
+            val_x = [x3]
+        elif mode == 'no_trans':
+            val_x = [x2]
+        else:
+            val_x = [x2, x3]
 
         loss = loss_mod(val_x, x_, z)
 
@@ -115,14 +114,17 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
             losses[j] += loss[j].item() * 100
 
         writer.add_scalar('train/total_loss', losses[0], trainer.global_step)
-        writer.add_scalar('train/loss_rec_rotation', losses[1], trainer.global_step)
-        writer.add_scalar('train/loss_z_rotation', losses[2], trainer.global_step)
-        writer.add_scalar('train/loss_rec_translation', losses[3], trainer.global_step)
-        writer.add_scalar('train/loss_z_translation', losses[4], trainer.global_step)
+        writer.add_scalar('train/loss_rec_rotation', losses[1],
+                          trainer.global_step)
+        writer.add_scalar('train/loss_z_rotation', losses[2],
+                          trainer.global_step)
+        writer.add_scalar('train/loss_rec_translation', losses[3],
+                          trainer.global_step)
+        writer.add_scalar('train/loss_z_translation', losses[4],
+                          trainer.global_step)
         trainer.global_step += 1
 
     return losses
-
 
 
 def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
@@ -143,9 +145,12 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
             x2 = trainer.normalize(x2)
             x3 = trainer.normalize(x3)
 
-            if mode == 'no_rot': val_x = [x3]
-            elif mode == 'no_trans': val_x = [x2]
-            else: val_x = [x2, x3]
+            if mode == 'no_rot':
+                val_x = [x3]
+            elif mode == 'no_trans':
+                val_x = [x2]
+            else:
+                val_x = [x2, x3]
 
             if plot_sample:
                 plot_sample = False
@@ -161,20 +166,18 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
                                  trainer.global_step)
                 if mode == 'both':
                     writer.add_image('test/target_1',
-                                 val_x[1].cpu(),
-                                 trainer.global_step)
+                                     val_x[1].cpu(),
+                                     trainer.global_step)
                     writer.add_image('test/output_1',
-                                    x_[1].cpu(),
-                                    trainer.global_step)
+                                     x_[1].cpu(),
+                                     trainer.global_step)
 
             all_z.append(z[0])
             all_angles.append(label[:, 3:])
-            all_axis.append(label[:,:3])
+            all_axis.append(label[:, :3])
             all_z_ax.append(z[1])
 
-
             loss = loss_mod(val_x, x_, z)
-            # loss = [torch.nn.functional.mse_loss(x2, x_[0])]
 
             for i in range(len(loss)):
                 losses[i] += loss[i].item() * 100
@@ -191,13 +194,15 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
                 fig, ax = plt.subplots()
                 ax.scatter(all_angles[:, j], all_z[:, i], s=2)
                 ax.set(xlabel=f'$\\{name}$', ylabel='z')
-                writer.add_figure(f'test/z{i}_{name}', fig, trainer.global_step)
+                writer.add_figure(f'test/z{i}_{name}', fig,
+                                  trainer.global_step)
         if mode != 'no_trans':
             for j, name in enumerate(['x', 'y', 'z']):
                 fig, ax = plt.subplots()
                 ax.scatter(all_axis[:, j], all_z_ax[:, i], s=2)
                 ax.set(xlabel=f'$\\{name}$', ylabel='z')
-                writer.add_figure(f'test/z{i}_{name}', fig, trainer.global_step)
+                writer.add_figure(f'test/z{i}_{name}', fig,
+                                  trainer.global_step)
 
     return losses
 
