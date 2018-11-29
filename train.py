@@ -1,6 +1,8 @@
 import torch
 import torchvision.utils as vutils
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
@@ -13,8 +15,7 @@ from model import Model
 
 
 class Trainer:
-    def __init__(self, shape, mode, mean, std):
-        self.mode = mode
+    def __init__(self, shape, mean, std):
         self.loader = get_loader(f'./data/{shape}', image_size=128,
                                  batch_size=64, dataset='Geometric',
                                  mode='train', num_workers=4, pin_memory=True,
@@ -91,7 +92,7 @@ def ae_epoch(model, loss_mod, optimizer_gen, scheduler_gen, loader,
         x1 = x1.to(device)
         x2 = x2.to(device)
         x3 = x3.to(device)
-        z, x_ = model(x1)
+        z, x_ = model(x1, mode=mode)
 
         with torch.no_grad():
             x1 = trainer.normalize(x1)
@@ -139,7 +140,7 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
             x1 = x1.to(device)
             x2 = x2.to(device)
             x3 = x3.to(device)
-            z, x_ = model(x1)
+            z, x_ = model(x1, mode=mode)
 
             x1 = trainer.normalize(x1)
             x2 = trainer.normalize(x2)
@@ -147,10 +148,13 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
 
             if mode == 'no_rot':
                 val_x = [x3]
+                out_x = [x_[1]]
             elif mode == 'no_trans':
                 val_x = [x2]
+                out_x = [x_[0]]
             else:
                 val_x = [x2, x3]
+                out_x = x_
 
             if plot_sample:
                 plot_sample = False
@@ -161,15 +165,13 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
                 writer.add_image('test/target',
                                  val_x[0].cpu(),
                                  trainer.global_step)
-                writer.add_image('test/output',
-                                 x_[0].cpu(),
-                                 trainer.global_step)
+                for i, x in enumerate(out_x):
+                    writer.add_image(f'test/output{i}',
+                                     x.cpu(),
+                                     trainer.global_step)
                 if mode == 'both':
                     writer.add_image('test/target_1',
                                      val_x[1].cpu(),
-                                     trainer.global_step)
-                    writer.add_image('test/output_1',
-                                     x_[1].cpu(),
                                      trainer.global_step)
 
             all_z.append(z[0])
@@ -188,30 +190,29 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
     all_axis = torch.cat(all_axis, dim=0)
 
     for i in range(model.split):
-
-        if mode != 'no_rot':
-            for j, name in enumerate(['theta', 'phi']):
-                fig, ax = plt.subplots()
-                ax.scatter(all_angles[:, j], all_z[:, i], s=2)
-                ax.set(xlabel=f'$\\{name}$', ylabel='z')
-                writer.add_figure(f'test/z{i}_{name}', fig,
-                                  trainer.global_step)
-        if mode != 'no_trans':
-            for j, name in enumerate(['x', 'y', 'z']):
-                fig, ax = plt.subplots()
-                ax.scatter(all_axis[:, j], all_z_ax[:, i], s=2)
-                ax.set(xlabel=f'$\\{name}$', ylabel='z')
-                writer.add_figure(f'test/z{i}_{name}', fig,
-                                  trainer.global_step)
+        for j, name in enumerate(['x', 'y', 'z']):
+            fig, ax = plt.subplots()
+            ax.scatter(all_axis[:, j], all_z[:, i], s=2)
+            ax.set(xlabel=f'{name}', ylabel='z')
+            writer.add_figure(f'test/z{i}_{name}', fig,
+                              trainer.global_step)
+    for i in range(model.z_dim - model.split):
+        for j, name in enumerate(['theta', 'phi']):
+            fig, ax = plt.subplots()
+            ax.scatter(all_angles[:, j], all_z_ax[:, i], s=2)
+            ax.set(xlabel=f'{name}', ylabel='z')
+            writer.add_figure(f'test/z{i}_{name}', fig,
+                              trainer.global_step)
 
     return losses
 
 
 if __name__ == "__main__":
-    model = Model(split=3, w=128)
+    model = Model(split=3, z_dim=6, w=128)
     optimizer = torch.optim.Adam(model.parameters(), 0.0001)
     sched = torch.optim.lr_scheduler.StepLR(optimizer, 30, 0.1)
-    trainer = Trainer('square', 'no_rot', 0, 1)
+    trainer = Trainer('cube', 0, 1)
 
     loss_module = Loss_Module(bootstrap_L2, lat_rot_loss)
-    trainer.train(model, 100, optimizer, sched, loss_module, 'cuda')
+    trainer.train(model, 100, optimizer, sched, loss_module, 'cuda',
+                  mode='both')

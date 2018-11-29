@@ -121,6 +121,7 @@ class Model(nn.Module):
         self.dec1    = Decoder(z_dim=split, chan=chan, w=w, d=d, leaky=leaky, batch_norm=batch_norm) 
         self.dec2    = Decoder(z_dim=z_dim-split, chan=chan, w=w, d=d, leaky=leaky, batch_norm=batch_norm)
         self.split   = split
+        self.z_dim = z_dim
 
     # forward method
     def forward(self, x, mode = 'no_trans'):
