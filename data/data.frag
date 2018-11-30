@@ -3,7 +3,7 @@ uniform mat4      u_view;            // View matrix
 uniform mat4      u_normal;          // Normal matrix
 uniform mat4      u_projection;      // Projection matrix
 uniform vec4      u_color;           // Global color
-uniform sampler2D u_texture;         // Texture 
+/* uniform sampler2D u_texture;         // Texture */ 
 uniform vec3      u_light_position;  // Light position
 uniform vec3      u_light_intensity; // Light intensity
 uniform float     u_light_ambient;   // Light intensity
@@ -11,7 +11,7 @@ uniform float     u_light_ambient;   // Light intensity
 varying vec4      v_color;           // Interpolated fragment color (in)
 varying vec3      v_normal;          // Interpolated normal (in)
 varying vec3      v_position;        // Interpolated position (in)
-varying vec2      v_texcoord;        // Interpolated fragment texture coordinates (in)
+/* varying vec2      v_texcoord;        // Interpolated fragment texture coordinates (in) */
 void main()
 {
     // Calculate normal in world coordinates
@@ -34,10 +34,11 @@ void main()
     // 3. The texture and texture coord: texture(tex, fragTexCoord)
 
     // Get texture color
-    vec4 t_color = vec4(vec3(texture2D(u_texture, v_texcoord).r), 1.0);
+    /* vec4 t_color = vec4(vec3(texture2D(u_texture, v_texcoord).r), 1.0); */
 
     // Final color
-    vec4 color = u_color * t_color * mix(v_color, t_color, 0.25);
+    /* vec4 color = u_color * t_color * mix(v_color, t_color, 0.25); */
+    vec4 color = u_color * v_color;
 
     gl_FragColor = color * (brightness * vec4(u_light_intensity, 1) + u_light_ambient);
 }

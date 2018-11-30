@@ -189,15 +189,15 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
     all_angles = torch.cat(all_angles, dim=0)
     all_axis = torch.cat(all_axis, dim=0)
 
-    for i in range(model.split):
+    for i in range(model.trans_dim):
         for j, name in enumerate(['x', 'y', 'z']):
             fig, ax = plt.subplots()
             ax.scatter(all_axis[:, j], all_z[:, i], s=2)
             ax.set(xlabel=f'{name}', ylabel='z')
             writer.add_figure(f'test/z{i}_{name}', fig,
                               trainer.global_step)
-    for i in range(model.z_dim - model.split):
-        for j, name in enumerate(['theta', 'phi']):
+    for i in range(model.rot_dim):
+        for j, name in enumerate(['theta', 'phi', 'gamma']):
             fig, ax = plt.subplots()
             ax.scatter(all_angles[:, j], all_z_ax[:, i], s=2)
             ax.set(xlabel=f'{name}', ylabel='z')
@@ -208,10 +208,10 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
 
 
 if __name__ == "__main__":
-    model = Model(split=3, z_dim=6, w=128)
+    model = Model(trans_dim=3, rot_dim=4, w=128)
     optimizer = torch.optim.Adam(model.parameters(), 0.0001)
     sched = torch.optim.lr_scheduler.StepLR(optimizer, 30, 0.1)
-    trainer = Trainer('cube', 0, 1)
+    trainer = Trainer('cat', 0, 1)
 
     loss_module = Loss_Module(bootstrap_L2, lat_rot_loss)
     trainer.train(model, 100, optimizer, sched, loss_module, 'cuda',
