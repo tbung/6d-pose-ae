@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 from scipy.stats import mode
 
-class tracker():
+"""class tracker():
     def __init__(self):
         self.mu     = 0
         self.std    = 0
@@ -55,7 +55,7 @@ def create_folder(folder):
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path))
     print('Folder created.')
-    print(path)
+    print(path)"""
 
 
 # Test the nearest_cosine function with indices
@@ -192,7 +192,7 @@ def main():
 
     print('mode kNN', mode_knn(vals, ind, labels))
 
-    
+
 
 
 

@@ -6,7 +6,7 @@ from torchvision import models
 # all important loss module in which the losses are utilized
 class Loss_Module(nn.Module):
     # initializer
-    def __init__(self, loss_rec, loss_lat = None):
+    def __init__(self, loss_rec, loss_lat = L2_Norm):
         super(Loss_Module, self).__init__()
         self.l_rec      = loss_rec
         self.l_lat   = loss_lat
@@ -35,6 +35,8 @@ class Loss_Module(nn.Module):
 
         return l
 
+def L2_Norm(x):
+    return (x**2).mean()
 
 # reconstruction loss alternative to bootstrapped L2
 def weighted_L2(x, y):
