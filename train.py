@@ -55,9 +55,10 @@ class Trainer:
             print(
                     'Epoch: {} \n'
                     'Training: \n'
-                    'Loss: {:.3f} \t L_rec: {:.3f} \t'
-                    'L_sparse:{:.3f} \t L_distr: {:.3f}'.format(
-                        epoch, losses[0], losses[1], losses[2], losses[3])
+                    'Loss: {:.3f} \t L_rot: {:.3f} \t'
+                    'L_rot_z:{:.3f} \t L_trans: {:.3f} \t'
+                    'L_trans: {:.3f}'.format(
+                        epoch, losses[0], losses[1], losses[2], losses[3], losses[4])
             )
 
             model.eval()
@@ -71,10 +72,11 @@ class Trainer:
             print(
                     '\n'
                     'Test: \n'
-                    'Loss: {:.3f} \t L_rec: {:.3f} \t'
-                    'L_sparse:{:.3f} \t L_distr: {:.3f}'.format(
+                    'Loss: {:.3f} \t L_rot: {:.3f} \t'
+                    'L_rot_z:{:.3f} \t L_trans: {:.3f} \t'
+                    'L_trans: {:.3f}'.format(
                         losses_test[0], losses_test[1], losses_test[2],
-                        losses_test[3]
+                        losses_test[3], losses_test[4]
                     )
             )
 

@@ -130,8 +130,8 @@ class Model(nn.Module):
     # forward method
     def forward(self, x, mode = 'no_trans'):
         """ 3 Different modes of forward:
-        1. no_trans -> z1 encodes rotation      output: z1, x_rot
-        2. no_rot   -> z2 encoder translation   output: z2, x_trans
+        1. no_trans -> z1 encodes rotation      output: [z1, z2], [x_rot, False]
+        2. no_rot   -> z2 encoder translation   output: [z1, z2], [False, x_trans]
         3. both     -> 1. & 2. combined         output: [z1,z2], [x_rot, x_trans]"""
         z   = self.encoder(x)
         z1  = z[:,:self.rot_dim].contiguous()
