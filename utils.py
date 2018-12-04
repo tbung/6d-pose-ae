@@ -144,6 +144,11 @@ class Codebook(nn.Module):
         self.init_book(data_loader, device)
         self = self.to(device)
 
+
+        # different versions to extract the information of the latent space
+        self.rot_module   = mode_knn
+        self.trans_module = weighted_mean
+
     def init_book(self, data_loader, device):
         books =  create_codetensors(self.model, data_loader, device, step_ax = 0.1, step_rot = 1.)
         for book in books:
@@ -153,6 +158,7 @@ class Codebook(nn.Module):
         self.z_trans.data = book[2]
         self.trans.data = book[3]
         print('finished codebook initalization')
+        
 
         
     def forward(self, inputs):
