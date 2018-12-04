@@ -139,3 +139,6 @@ pip-selfcheck.json
 # End of https://www.gitignore.io/api/python
 .DS_Store
 .vscode/settings.json
+
+
+#####gitignorelatex from https://github.com/github/gitignore ########
