@@ -1,5 +1,9 @@
 # tensorboard
-runs/
+runs*/
+
+# data
+cat/
+eggbox/
 
 # Ignore dataset
 cube/

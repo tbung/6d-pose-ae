@@ -114,8 +114,12 @@ class Decoder(nn.Module):
 
 class Model(nn.Module):
     # initializers
-    def __init__(self, split = 2 , z_dim = 4, chan = 3, w = 64, d = 64, leaky = 0, batch_norm=False):
+    def __init__(self, trans_dim=3, rot_dim = 4, chan = 3, w = 64, d = 64, leaky = 0, batch_norm=False):
         super(Model, self).__init__()
+        z_dim = trans_dim + rot_dim
+        split = rot_dim
+        self.trans_dim = trans_dim
+        self.rot_dim = rot_dim
         self.encoder = Encoder(z_dim=z_dim, chan=chan, w=w, d=d, leaky=leaky, batch_norm=batch_norm)
 
         self.dec1    = Decoder(z_dim=split, chan=chan, w=w, d=d, leaky=leaky, batch_norm=batch_norm) 
@@ -130,8 +134,8 @@ class Model(nn.Module):
         2. no_rot   -> z2 encoder translation   output: [z1, z2], [False, x_trans]
         3. both     -> 1. & 2. combined         output: [z1,z2], [x_rot, x_trans]"""
         z   = self.encoder(x)
-        z1  = z[:,:self.split].contiguous()
-        z2  = z[:,self.split:].contiguous()
+        z1  = z[:,:self.rot_dim].contiguous()
+        z2  = z[:,self.rot_dim:].contiguous()
         
         if mode == 'no_trans':
             return [z1, z2], [self.dec1(z1), False]

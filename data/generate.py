@@ -7,9 +7,33 @@ from pathlib import Path
 import fire
 import tqdm
 import logging
+import trimesh
 
 log = logging.getLogger('glumpy')
 log.setLevel(logging.WARNING)
+
+shapes = ['cat', 'eggbox']
+
+
+def load_ply(name):
+    vtype = [('a_position', np.float32, 3), ('a_texcoord', np.float32, 2),
+             ('a_normal',   np.float32, 3), ('a_color',    np.float32, 4)]
+
+    mesh = trimesh.load(f"./{name}/mesh.ply")
+    vertices = np.zeros(mesh.vertices.shape[0], dtype=vtype)
+    vertices['a_position'] = mesh.vertices - mesh.center_mass
+    vertices['a_position'] /= np.abs(vertices['a_position']).max()
+    vertices['a_normal'] = mesh.vertex_normals
+    # vertices['a_color'] = mesh.visual.vertex_colors / 255
+    vertices['a_color'] = np.ones_like(mesh.visual.vertex_colors)
+    vertices['a_color'][:,:3] *= 0.3
+
+    filled = np.array(mesh.faces, dtype=np.uint32)
+
+    vertices = vertices.view(gloo.VertexBuffer)
+    filled = filled.view(gloo.IndexBuffer)
+
+    return vertices, filled, None
 
 
 def create_square():
@@ -54,7 +78,7 @@ def create_square():
 
 
 def create_cube():
-    vtype = [('a_position', np.float32, 3), ('a_texcoord', np.float32, 2),
+    vtype = [('a_position', np.float32, 3),
              ('a_normal',   np.float32, 3), ('a_color',    np.float32, 4)]
     itype = np.uint32
 
@@ -70,8 +94,6 @@ def create_cube():
                   [0.3, 0.3, 0.3, 1],
                   [0.3, 0.3, 0.3, 1], [0.3, 0.3, 0.3, 1], [0.3, 0.3, 0.3, 1],
                   [0.3, 0.3, 0.3, 1]])
-    # Texture coords
-    t = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
 
     faces_p = [0, 1, 2, 3,  0, 3, 4, 5,   0, 5, 6, 1,
                1, 6, 7, 2,  7, 4, 3, 2,   4, 7, 6, 5]
@@ -79,14 +101,11 @@ def create_cube():
                1, 6, 7, 2,  7, 4, 3, 2,   4, 7, 6, 5]
     faces_n = [0, 0, 0, 0,  1, 1, 1, 1,   2, 2, 2, 2,
                3, 3, 3, 3,  4, 4, 4, 4,   5, 5, 5, 5]
-    faces_t = [0, 1, 2, 3,  0, 1, 2, 3,   0, 1, 2, 3,
-               3, 2, 1, 0,  0, 1, 2, 3,   0, 1, 2, 3]
 
     vertices = np.zeros(24, vtype)
     vertices['a_position'] = p[faces_p]
     vertices['a_normal'] = n[faces_n]
     vertices['a_color'] = c[faces_c]
-    vertices['a_texcoord'] = t[faces_t]
 
     filled = np.resize(
        np.array([0, 1, 2, 0, 2, 3], dtype=itype), 6 * (2 * 3))
@@ -124,8 +143,8 @@ def render(shape, n_samples, imgsize, fixed_z=True,
     (root / 'no_rotation').mkdir(exist_ok=True)
     (root / 'no_translation').mkdir(exist_ok=True)
     (root / 'images').mkdir(exist_ok=True)
-    gt = [[n_samples, 'x', 'y', 'z', 'theta', 'phi'] ]
-    x = y = z = theta = phi = 0
+    gt = [[n_samples, 'x', 'y', 'z', 'theta', 'phi', 'gamma']]
+    x = y = z = theta = phi = gamma = 0
 
     with open('data.vert') as f:
         vertex = f.read()
@@ -152,8 +171,16 @@ def render(shape, n_samples, imgsize, fixed_z=True,
         cube["u_light_position"] = 3, 3, 3
         cube["u_light_intensity"] = 0, 0, 0
         cube["u_light_ambient"] = 1
+    elif shape in shapes:
+        V, I, _ = load_ply(shape)
+        cube = gloo.Program(vertex, fragment)
+        cube.bind(V)
+        cube["u_light_position"] = 3, 3, 3
+        cube["u_light_intensity"] = 1, 1, 1
+        cube["u_light_ambient"] = 0.2
 
-    cube['u_texture'] = mono()
+
+    # cube['u_texture'] = mono()
     cube['u_model'] = np.eye(4, dtype=np.float32)
     cube['u_view'] = glm.translation(0, 0, -7)
     if shape == 'square':
@@ -162,11 +189,14 @@ def render(shape, n_samples, imgsize, fixed_z=True,
     elif shape == 'cube':
         min_xy, max_xy = -1.7, 1.7
         min_z, max_z = -3, 1.8
+    elif shape in shapes:
+        min_xy, max_xy = -1.7, 1.7
+        min_z, max_z = -3, 1.8
     frame = 0
 
     @window.event
     def on_draw(dt):
-        nonlocal frame, x, y, z, theta, phi
+        nonlocal frame, x, y, z, theta, phi, gamma
 
         # Export screenshot
         gl.glReadPixels(0, 0, window.width,
@@ -175,7 +205,8 @@ def render(shape, n_samples, imgsize, fixed_z=True,
         if frame > 2:  # Skip empty zero frame
             if (frame) % 3 == 0:
                 pbar.update()
-                gt.append([f'{(frame-3)//3:05d}.png', x, y, z, theta, phi])
+                gt.append([f'{(frame-3)//3:05d}.png', x, y, z, theta, phi,
+                           gamma])
                 png.from_array(framebuffer,
                                'RGB').save(root / 'images' /
                                            f'{(frame-3)//3:05d}.png')
@@ -196,6 +227,9 @@ def render(shape, n_samples, imgsize, fixed_z=True,
                 z = np.random.random_sample() * (max_z - min_z) + min_z
             if shape == 'cube':
                 phi = np.random.random_sample() * 360
+            if shape in shapes:
+                phi = np.random.random_sample() * 360
+                gamma = np.random.random_sample() * 360
 
         window.clear()
 
@@ -212,6 +246,7 @@ def render(shape, n_samples, imgsize, fixed_z=True,
         if (frame - 1) % 3 != 1:
             glm.rotate(model, theta, 0, 0, 1)
             glm.rotate(model, phi, 0, 1, 0)
+            glm.rotate(model, gamma, 1, 0, 0)
 
         # Translate cube
         if (frame - 1) % 3 != 2:
