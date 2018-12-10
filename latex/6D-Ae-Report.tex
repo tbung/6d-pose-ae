@@ -19,8 +19,14 @@ sorting=ynt
 \newcommand{\R}{\mathbb{R}}
 \usepackage{blindtext}
 \usepackage{xspace}
+\usepackage{tikz}
+\usepackage{pgf}
+\usetikzlibrary{arrows,arrows.meta,shapes,shapes.multipart,shapes.geometric,shapes.misc,calc,positioning,decorations.pathreplacing,fit,backgrounds,positioning,calc}
+
 \newcommand{\rot}{\ensuremath{\text{rot}\xspace}}
 \newcommand{\trans}{\ensuremath{\text{trans}\xspace}}
+\newcommand{\loss}{\ensuremath{\mathcal{L}_2}}
+
 
 \begin{document}
   % Keine Seitenzahlen im Vorspann
@@ -108,6 +114,11 @@ $f$ can be any arbitrary augmentation or just the identity.
 
 
 \subsection{6D Pose Autoencoder}\label{6D Pose Autoencoder}
+\begin{figure}[htb]
+    \centering
+    \input{./fig_model.tex}
+    \caption{The Model}
+\end{figure}
 The motivation of the 6D-Pose-Autoencoder is to get two latent space $z_{\rot}$ and $z_{\trans}$ from which the 6D pose comprised of rotation and translation can be read out separately.
 Therefore $z_{\rot}$ encodes the orientation and should be invariant against translation while $z_{\text{trans}}$ encodes the translation while being invariant for rotations. This is done by taking two separate Augmented Autoencoder, one for the translation and one for the rotation. They receive the same input but are trained to reconstruct differently augmented versions of the input $x_{\text{rot}}$ and $x_{\text{trans}}$ . The training schedule is inspired by \textbf{Hypothesis 1}.
 This is achieved by applying random augmentations $f_{\text{aug}}$ comprised of a $f_{\trans}$ and $f_{\rot}$ on the input $x$. 
