@@ -1,5 +1,11 @@
+#delete when finished ignore pdf for easier merge
+latex/6D-Ae-Report.pdf
+
 # tensorboard
 runs*/
+
+#sources and papers used
+sources/
 
 # data
 cat/
