@@ -194,14 +194,14 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
     for i in range(model.trans_dim):
         for j, name in enumerate(['x', 'y', 'z']):
             fig, ax = plt.subplots()
-            ax.scatter(all_axis[:, j], all_z[:, i], s=2)
+            ax.scatter(all_axis[:, j], all_z_ax[:, i], s=2)
             ax.set(xlabel=f'{name}', ylabel='z')
             writer.add_figure(f'test/z{i}_{name}', fig,
                               trainer.global_step)
     for i in range(model.rot_dim):
         for j, name in enumerate(['theta', 'phi', 'gamma']):
             fig, ax = plt.subplots()
-            ax.scatter(all_angles[:, j], all_z_ax[:, i], s=2)
+            ax.scatter(all_angles[:, j], all_z[:, i], s=2)
             ax.set(xlabel=f'{name}', ylabel='z')
             writer.add_figure(f'test/z{i}_{name}', fig,
                               trainer.global_step)
