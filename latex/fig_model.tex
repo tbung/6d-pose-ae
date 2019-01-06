@@ -1,0 +1,59 @@
+\begin{tikzpicture}[
+    coder/.style = {trapezium, trapezium angle=70, minimum width=20mm, draw, thick},
+    trapezium stretches=true,
+    vector/.style = {rectangle split, rounded corners=1mm, rectangle split
+        parts=2, thick, draw, inner ysep=5mm, rectangle split part
+    fill={lime!40, orange!40}},
+    mat/.style = {inner sep=0mm, column sep=0mm,nodes=draw},
+    img/.style = {inner sep=0, outer sep=-3mm},
+    fat arrow/.style = {double arrow, thick, draw, anchor=mid, align=center,
+    text depth=-0.5pt, text width = 1.5cm, text = black},
+    node distance = 5mm
+    ]
+    \node [vector] (z) {$z_1$ \nodepart{second} $z_2$};
+    \node [coder, fill=black!20, shape border rotate=270, left=of z] (E) {Encoder};
+    \matrix [row sep=2mm, right= of z]
+    {
+        \node [coder, fill=lime!40, shape border rotate=90] (D1) {Decoder}; & \\
+        \node [coder, fill=orange!40, shape border rotate=90] (D2) {Decoder}; & \\
+    };
+\draw [->, thick] (E.east)
+    -- ($(0,0)!($(0,0)!($(z.north west)!0.5!(z.west)$)!(0,1) +
+    (0,0)!($($(z.north
+    west)!0.5!(z.west)$)!0.5!(E.east)$)!(1,0)$)!(1,0)+(0,0)!(E.east)!(0,1)$)
+    -- ($(0,0)!($(z.north west)!0.5!(z.west)$)!(0,1) + (0,0)!($($(z.north
+    west)!0.5!(z.west)$)!0.5!(E.east)$)!(1,0)$)
+    -> ($(z.north west)!0.5!(z.west)$);
+
+\draw [->, thick] (E.east)
+    -- ($(0,0)!($(0,0)!($(z.south west)!0.5!(z.west)$)!(0,1) +
+    (0,0)!($($(z.south
+    west)!0.5!(z.west)$)!0.5!(E.east)$)!(1,0)$)!(1,0)+(0,0)!(E.east)!(0,1)$)
+    -- ($(0,0)!($(z.south west)!0.5!(z.west)$)!(0,1) + (0,0)!($($(z.south
+    west)!0.5!(z.west)$)!0.5!(E.east)$)!(1,0)$)
+    -> ($(z.south west)!0.5!(z.west)$);
+
+\draw [->, thick] ($(z.north east)!0.5!(z.east)$) -- ($(0,0)!($(z.north
+    east)!0.5!(z.east)$)!(0,1) + (0,0)!($($(z.north
+    east)!0.5!(z.east)$)!0.5!(D1.west)$)!(1,0)$) -- ($(0,0)!($(0,0)!($(z.north
+    east)!0.5!(z.east)$)!(0,1) + (0,0)!($($(z.north
+    east)!0.5!(z.east)$)!0.5!(D1.west)$)!(1,0)$)!(1,0)+(0,0)!(D1.west)!(0,1)$)
+    -> (D1.west);
+
+\draw [->, thick] ($(z.south east)!0.5!(z.east)$)
+    -- ($(0,0)!($(z.south east)!0.5!(z.east)$)!(0,1)
+    + (0,0)!($($(z.south east)!0.5!(z.east)$)!0.5!(D2.west)$)!(1,0)$)
+    -- ($(0,0)!($(0,0)!($(z.south east)!0.5!(z.east)$)!(0,1)
+    + (0,0)!($($(z.south east)!0.5!(z.east)$)!0.5!(D2.west)$)!(1,0)$)!(1,0)
+    + (0,0)!(D2.west)!(0,1)$)
+    -> (D2.west);
+
+\node [img, left= of E] (in) {\includegraphics[width=20mm]{./input.png}};
+\node [img, right= of D1] (o1) {\includegraphics[width=20mm]{./output1.png}};
+\node [img, right= of D2] (o2) {\includegraphics[width=20mm]{./output2.png}};
+\node [fat arrow, right= of o1] (l1) {$\loss$};
+\node [fat arrow, right= of o2] (l2) {$\loss$};
+\node [img, right= of l1] (t1) {\includegraphics[width=20mm]{./target1.png}};
+\node [img, right= of l2] (t2) {\includegraphics[width=20mm]{./target2.png}};
+
+\end{tikzpicture}
