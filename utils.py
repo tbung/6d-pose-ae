@@ -4,6 +4,7 @@ import os
 import torch.nn.functional as F
 import torch.nn as nn
 from scipy.stats import mode
+import math
 
 """class tracker():
     def __init__(self):
@@ -91,6 +92,7 @@ def renorm(x):
 def lazy_mean(vals, ind, labels):
     return labels.mean(dim = 1)
 
+# Implementation of weighted mean for regression problem
 def weighted_mean(vals, ind, labels):
     weights   = F.softmax(vals, dim=1)
     return (labels*weights[:,:,None]).mean(dim=1)
@@ -171,6 +173,93 @@ class Codebook(nn.Module):
 
 
         return rotations, translations
+
+def qmul(q, r):
+    """
+    Multiply quaternion(s) q with quaternion(s) r.
+    Expects two equally-sized tensors of shape (*, 4), where * denotes any number of dimensions.
+    Returns q*r as a tensor of shape (*, 4).
+    """
+    assert q.shape[-1] == 4
+    assert r.shape[-1] == 4
+    
+    original_shape = q.shape
+    
+    # Compute outer product
+    terms = torch.bmm(r.view(-1, 4, 1), q.view(-1, 1, 4))
+
+    w = terms[:, 0, 0] - terms[:, 1, 1] - terms[:, 2, 2] - terms[:, 3, 3]
+    x = terms[:, 0, 1] + terms[:, 1, 0] - terms[:, 2, 3] + terms[:, 3, 2]
+    y = terms[:, 0, 2] + terms[:, 1, 3] + terms[:, 2, 0] - terms[:, 3, 1]
+    z = terms[:, 0, 3] - terms[:, 1, 2] + terms[:, 2, 1] + terms[:, 3, 0]
+    return torch.stack((w, x, y, z), dim=1).view(original_shape)
+
+# Checks if a matrix is a valid rotation matrix.
+def isRotationMatrix(R) :
+    Rt = np.transpose(R)
+    RtR = np.dot(Rt, R)
+    I = np.identity(3, dtype = R.dtype)
+    n = np.linalg.norm(I - RtR)
+    return n < 1e-6
+ 
+ 
+
+# Calculates Rotation Matrix given euler angles.
+def eulerAnglesToRotationMatrix(theta) :
+     
+    R_x = np.array([[1,         0,                  0                   ],
+                    [0,         math.cos(theta[0]), -math.sin(theta[0]) ],
+                    [0,         math.sin(theta[0]), math.cos(theta[0])  ]
+                    ])
+         
+         
+                     
+    R_y = np.array([[math.cos(theta[1]),    0,      math.sin(theta[1])  ],
+                    [0,                     1,      0                   ],
+                    [-math.sin(theta[1]),   0,      math.cos(theta[1])  ]
+                    ])
+                 
+    R_z = np.array([[math.cos(theta[2]),    -math.sin(theta[2]),    0],
+                    [math.sin(theta[2]),    math.cos(theta[2]),     0],
+                    [0,                     0,                      1]
+                    ])
+                     
+                     
+    R = np.dot(R_z, np.dot( R_y, R_x ))
+ 
+    return R
+
+
+def rotationMatrixToEulerAngles(R) :
+ 
+    assert(isRotationMatrix(R))
+     
+    sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
+     
+    singular = sy < 1e-6
+ 
+    if  not singular :
+        x = math.atan2(R[2,1] , R[2,2])
+        y = math.atan2(-R[2,0], sy)
+        z = math.atan2(R[1,0], R[0,0])
+    else :
+        x = math.atan2(-R[1,2], R[1,1])
+        y = math.atan2(-R[2,0], sy)
+        z = 0
+ 
+    return np.array([x, y, z])
+
+
+#gets 2 3dim vectors with euler vectors and outputs the mix of both
+# receives numpy arrays as inputs and outputs numpy arrays
+def get_euler(tulple1, tulple2):
+    R1 = eulerAnglesToRotationMatrix(tulple1)
+    R2 = eulerAnglesToRotationMatrix(tulple2)
+
+    R3 = np.dot(R2, R1)
+    return rotationMatrixToEulerAngles(R3)
+
+
         
 
 
