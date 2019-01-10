@@ -259,6 +259,31 @@ def get_euler(tulple1, tulple2):
     R3 = np.dot(R2, R1)
     return rotationMatrixToEulerAngles(R3)
 
+def slerp(v0, v1, t_array):
+    #input of 2 quaternions v0 & v1 as torch tensors 
+    # t_array goes from 0 to 1 and handles the interpolation steps e.g. torch.arange(0, 1, 0.1)
+    #t_array = torch.tensor(t_array)
+    dot = (v0*v1).sum()
+ 
+    if (dot < 0.0):
+        v1 = -v1
+        dot = -dot
+     
+    DOT_THRESHOLD = 0.9995
+    if (dot > DOT_THRESHOLD):
+        result = v0[None,:] + t_array[:,None]*(v1 - v0)[None,:]
+        result = renorm(result)
+        return result
+     
+    theta_0 = torch.acos(dot)
+    sin_theta_0 = torch.sin(theta_0)
+
+    theta = theta_0*t_array
+    sin_theta = torch.sin(theta)
+     
+    s0 = np.cos(theta) - dot * sin_theta / sin_theta_0
+    s1 = sin_theta / sin_theta_0
+    return (s0[:,None] * v0[None,:]) + (s1[:,None] * v1[None,:])
 
         
 
@@ -286,6 +311,8 @@ def main():
     print('weighted mean', weighted_mean(vals, ind, labels))
 
     print('mode kNN', mode_knn(vals, ind, labels))
+    z_slerp = slerp(z_book[0], z_book[1], torch.arange(0,1 , 0.3))
+    print(z_slerp)
 
 
 
