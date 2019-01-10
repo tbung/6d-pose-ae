@@ -86,15 +86,15 @@ All of our experiments are conducted on rendered data and also validated on rend
 \newpage
 
 \section{Methods}\label{Methods}
-In the following section we focus on the novel 6D-Autoencoder which is a new interpretation of the Augmented Autoencoder (AAE), introduced by Martin Sundermeier et Al. (XXXXXXXXX). First we introduce the concept of invariant latent space representations of an Autencoder via objective functions and then present a method to get the 6D-Pose based on the latent space representation.
+In the following section we focus on the novel 6D-Autoencoder which is a new interpretation of the Augmented Autoencoder (AAE), introduced by Martin Sundermeier et al. \cite{3D_Orientation_Learning}. First we introduce the concept of invariant latent space representations of an Autoencoder via objective functions and then present a method to get the 6D-Pose based on the latent space representation.
 
 \subsection{Autoencoder}\label{Autoencoder}
-The original Autoencoder is a technique to map a high dimensional input ($x$), such as image or audio data, into a lower dimensional representation ($z$) ($D << N$) while maintaining the important information of its input. To achieve this the model which consists of an Encoder $\varphi$ and Decoder $\phi$ is tasked to reconstruct its input after passing it through a low dimensional bottleneck ($z$), where each of them is a general function approximator (neural network), resulting in the following objective function:
+The original Autoencoder is a technique to map a high dimensional input ($x \in \mathbb{R}^N$), such as image or audio data, into a lower dimensional representation ($z \in \mathbb{R}^D$) ($D << N$) while maintaining the important information of its input. To achieve this the model which consists of an Encoder $\varphi$ and Decoder $\phi$ is tasked to reconstruct its input after passing it through a low dimensional bottleneck ($z$), where each of them is a general function approximator (neural network), resulting in the following objective function:
 \begin{equation}
 \min_{\varphi, \phi} L_{\text{rec}}(x, \phi(\varphi(x)))
 \end{equation}
 $L_{\text{rec}}$ can be any arbitrary distance metric on $\mathbb{R}^N$. 
-A specialized form of the Autoencoder is the  Denoising Autoencoder. For this type of Autoencoder the input $x$ gets pertubed with random noise $\tilde{x} = f_{\text{noise}}(x) =x + \epsilon$ $\epsilon \sim \mathbb{P}_{\epsilon}$ while beeing tasked to reconstruct the unpertubed $x$. This results in the following objective function:
+A specialized form of the Autoencoder is the  Denoising Autoencoder. For this type of Autoencoder the input $x$ gets pertubed with random noise $\tilde{x} = f_{\text{noise}}(x) =x + \epsilon$ with $\epsilon \sim \mathbb{P}_{\epsilon}$ while being tasked to reconstruct the unpertubed $x$. This results in the following objective function:
 \begin{equation}
 \min_{\varphi, \phi} L_{\text{rec}}(x, \phi(\varphi(f_{\text{noise}}(x) )))
 \end{equation}
@@ -102,16 +102,16 @@ The trained model can be used to reconstruct unpertubed test images. But how is 
 This question leads to the core assumption to create the AAE which gets motivated by a later experiment.
 \paragraph{Hypothesis 1} To optimally reconstruct the unpertubed $x$ for the previously unseen test data the encoder should get in theory invariant to the pertubation. Meaning: Encoded Latent space representation of the input is invariant against the perturbation.\\
 \paragraph{Regularized Autoencoder}
-The regularized Autoencoder as described in XXXDeepLearningBookXXX is defined by an additional loss/ part of the objective function which is solely effected by the latent space representation. By adding this additional loss the latent space gains some desired properties such as a specific distribution with the Variational Autoencoder by using the KL-Divergence as latent loss.
+The regularized Autoencoder as described in the `Deep Learning Book' by Goodfellow  \cite{Goodfellow} is defined by an additional loss or part of the objective function which is solely effected by the latent space representation. By adding this additional loss the latent space gains some desired properties such as a specific distribution with the Variational Autoencoder by using the KL-Divergence as latent loss.
 Resulting objective function of a regularized Autoencoder:
 \begin{equation}
 \min_{\varphi, \phi} L_{\text{rec}}(x, \phi(\varphi(f(x) ))) + L_{\text{lat}}(\varphi(f(x)))
 \end{equation}
 $f$ can be any arbitrary augmentation or just the identity.
 
-
 \subsection{6D Pose Autoencoder}\label{6D Pose Autoencoder}
 \begin{figure}[htb]
+ \label{model_square}
     \centering
     \input{./fig_model.tex}
     \caption{The Model}
@@ -135,10 +135,16 @@ The objective function of the system thereby is:
 \min_{\varphi_{\trans}, \phi_{\trans}}  L_{\text{rec}}(x_{\trans}, \phi_{\trans}(\varphi_{\trans}(f_{\text{aug}}(x) ))) 
 \end{aligned}
 \end{equation}
-For the final model $\varphi_{\rot} = \varphi_{\rot}` \circ \varphi$ and $\varphi_{\trans}= \varphi_{\trans}` \circ \varphi$ so they are encoded by the same encoder and $z_{\rot}$ and $z_{\trans}$ are just created by a split int its latent space. The complete architecture can be seen in figure XXXXX.
-\paragraph{Rotation} A rotation in one axis can be represented by a circle in $\mathbb{C}$ parametrized by $\theta \in [0, 2 \pi]$ with $\exp(i \theta)$ the choice  is near to define $z_{\rot} \in \mathbb{R}^2$ and using as $L_{\text{lat}}(z) = \text{abs} (||z_{\rot}||_2^2 -1)$ which forces the encoded $z_{\rot}$ to be on the unity circle. \\ 
-Rotations with three axes can be represented in a similar manner as hyper sphere in $\mathbb{H}$. So for three rotational axes we defined $z_{\rot}$ to be in $\mathbb{R}^4$ which is a generalization of $\mathbb{H}$ with the same latent loss as stated above.\\
-\paragraph{Translation} The translation of the object is a simple regression problem with uncorrelated factors. So we chose the simplest method to obtain a dense feature space in $z_{\trans} \in \mathbb{R}^3$ by taking as $L_{\text{lat}}(z) = z_{\trans}^2$. This is done because traditional autoencoders on mnist for example often have translations as single latent dimensions. An interesting fact is that the $z$ or depth axis could also be parametrized by scale so for objects with similar shape but different scales there would also be some ambiguities. 
+For the final model $\varphi_{\rot} = \varphi_{\rot}` \circ \varphi$ and $\varphi_{\trans}= \varphi_{\trans}` \circ \varphi$ so they are encoded by the same encoder and $z_{\rot}$ and $z_{\trans}$ are just created by a split int its latent space. The complete architecture can be seen in figure \ref{model_square}.
+\paragraph{Rotation} A rotation in one axis can be represented by a circle in Complex space ($\mathbb{C}$) parametrized by $\theta \in [0, 2 \pi]$ with $\exp(i \theta)$ the choice  is near to define $z_{\rot} \in \mathbb{R}^2$ and using as $L_{\text{lat}}(z) = \text{abs} (||z_{\rot}||_2^2 -1)$ which forces the encoded $z_{\rot}$ to be on the unity circle. \\ 
+Rotations with three axes can be represented in a similar manner as hyper sphere in Quaternion space ($\mathbb{Q}$). So for three rotational axes we defined $z_{\rot}$ to be in $\mathbb{R}^4$ which is a generalization of $\mathbb{Q}$ with the same latent loss as stated above.\\
+\paragraph{Translation} Because spatial proximity in our real world is defined by the euclidean distance in 3 dimension we chose stay as close as possible to this metric by defining the latent space for translations as follows: $z_{\trans} \in \mathbb{R}^3$. To have a dense feature space and due to the underlying metric of the real room the Euclidean norm of the latent space representations is used as regularization.
+\begin{equation}
+ \begin{aligned}
+L_{\text{lat}}(z) = z_{\trans}^2
+\end{aligned}
+\end{equation}
+Translations are often also easier to learn and disentangle for a neural network, traditional autoencoders on mnist for example often have translations as single latent dimensions. A fact that need to be taken into consideration with this method is that the $z$ or depth axis could also be parametrized by scale so for objects with similar shape but different scales there would also be some ambiguities.
 
 \newpage
 \subsection{Codebook}\label{Codebook}
@@ -146,14 +152,17 @@ The 6D-AE is after training able to extract the 3D orientation in $z_{\rot}$ and
 This is done in the following way:
 \begin{enumerate}
 \item Render synthetic objects with known translation and rotation\\
-\item Create a codebook by encoding the rendered images to $z_{\rot}\in \mathbb{R}^{O-1)}$ and $z_{\trans} \in \mathbb{R}^3$ where each of those belongs to a specific rotation and translation with respect to the camera
+\item Create a codebook by encoding the rendered images to $z_{\rot}\in \mathbb{R}^{O-1}$ and $z_{\trans} \in \mathbb{R}^3$ where each of those belongs to a specific rotation and translation with respect to the camera
 \end{enumerate}
 The next step is to utilize the K-Nearest-Neighbour algorithm separately on the two latent space representations of the test images with unknown labels compared to the codebook with known labels.\\
 The Distance metric used for the rotations $z_{\rot}$ is the cosine similarity. This is done because we initially made the assumption that our representations lie in a hyper sphere with unit distance from the origin.
 \begin{equation}
 \cos_i = \dfrac{z_i \cdot z_{\text{test}}}{ \vert\vert  z_i \vert \vert \cdot \vert \vert z_{\text{test}} \vert \vert }
 \end{equation}
-For the translation the euclidean distance was chosen as distance metric to determine the next nearest neighbours.
+For the translation the euclidean distance was chosen as distance metric to determine the next nearest neighbours and instead of the naive kNN algorithm a with softmax weighted algorithm was used to compute the location of the object $\vec{y}$. 
+\begin{equation}
+\vec{y}(z_{\trans}) = \dfrac{\sum_j  \vec{y}_j  \cdot  \exp(- L_2(z_{\trans},z_{\trans , j})) }{\sum_j \exp(- L_2(z_{\trans},z_{\trans , j}))}
+\end{equation}
 
 
 
@@ -162,7 +171,7 @@ For the translation the euclidean distance was chosen as distance metric to dete
 In the following section we present our results to prove our concepts presented in the chapter methods \ref{Methods}.
 XXXXXXXXXXXXXXXXXXXXXX
 \subsection{2D Square in 3D Space}\label{Square}
-The goal of this experiment was to reproduce the results of Martin Sundermayer et al. in XXXXXXX with the AAE and show that the rotation and translation can be disentangled in principle with this very easy object. $z_{\rot}$ was defined to be in in $\mathbb{R}^2$ representing $\mathbb{C}$ as described in chapter \ref{Methods} due to the single rotation axis of the object. Due to the two perpendicular axes of symmetry the square posses we should see a shifted and cosine function with the frequency $f = \dfrac{4}{2 \pi}$, because the square appears exactly the same after a rotation of $\dfrac{\pi}{2}i$. \\
+The goal of this experiment was to reproduce the qualitative result of Martin Sundermayer et al. \cite{3D_Orientation_Learning} with the AAE and show that the rotation and translation can be disentangled in principle with this training schedule. $z_{\rot}$ was defined to be in in $\mathbb{R}^2$ representing $\mathbb{C}$ as described in chapter \ref{Methods} due to the single rotation axis of the object. Due to the two perpendicular axes of symmetry the square posses we should see a shifted and cosine function with the frequency $f = \dfrac{4}{2 \pi}$, because the square appears exactly the same after a rotation of $\dfrac{\pi}{2}i$. \\
 The second part was to show that the translation could be extracted from the latent space representation $z_{\trans}$ and that different rotations have neglegible effect on it. The resulting plot for the correlation between $z_{\rot}$ and the rotation $\varphi$ as well as $z_{\trans}$ and the translation can be seen in figure XXXXXXXX.
 \newpage
 \subsection{3D Cube}\label{Cube}
