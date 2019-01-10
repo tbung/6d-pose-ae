@@ -174,6 +174,7 @@ class Codebook(nn.Module):
 
         return rotations, translations
 
+# Function taken from https://github.com/facebookresearch/QuaterNet/blob/master/common/quaternion.py
 def qmul(q, r):
     """
     Multiply quaternion(s) q with quaternion(s) r.
@@ -194,6 +195,8 @@ def qmul(q, r):
     z = terms[:, 0, 3] - terms[:, 1, 2] + terms[:, 2, 1] + terms[:, 3, 0]
     return torch.stack((w, x, y, z), dim=1).view(original_shape)
 
+
+############ Code Taken from https://www.learnopencv.com/rotation-matrix-to-euler-angles/ #################
 # Checks if a matrix is a valid rotation matrix.
 def isRotationMatrix(R) :
     Rt = np.transpose(R)
@@ -248,7 +251,7 @@ def rotationMatrixToEulerAngles(R) :
         z = 0
  
     return np.array([x, y, z])
-
+############################ END Taken Code ##########################
 
 #gets 2 3dim vectors with euler vectors and outputs the mix of both
 # receives numpy arrays as inputs and outputs numpy arrays
@@ -259,6 +262,8 @@ def get_euler(tulple1, tulple2):
     R3 = np.dot(R2, R1)
     return rotationMatrixToEulerAngles(R3)
 
+
+# Base Code taken from: https://en.wikipedia.org/wiki/Slerp
 def slerp(v0, v1, t_array):
     #input of 2 quaternions v0 & v1 as torch tensors 
     # t_array goes from 0 to 1 and handles the interpolation steps e.g. torch.arange(0, 1, 0.1)
