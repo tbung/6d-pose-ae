@@ -1,3 +1,4 @@
+import argparse
 import torch
 import torchvision.utils as vutils
 import numpy as np
@@ -26,19 +27,24 @@ class Trainer:
                                       mode='test', num_workers=4,
                                       pin_memory=True, mean=[mean]*3,
                                       std=[std]*3)
+        self.shape = shape
 
         self.mean = mean
         self.std = std
         self.f_epoch = 1 / len(self.loader)
         self.f_eval = 1 / len(self.loader_test)
-        self.writer = SummaryWriter()
 
     def train(self, model, epochs, optimizer, scheduler, loss_mod, device,
-              mode='no_trans'):
+              mode='no_trans', comment=''):
         """ 3 Different modes of Training the forward:
         1. no_trans -> z1 encodes rotation      output: z1, x_rot
         2. no_rot   -> z2 encoder translation   output: z2, x_trans
         3. both     -> 1. & 2. combined         output: [z1,z2], [x_rot, x_trans]"""
+        if comment:
+            comment = '_' + comment
+        self.writer = SummaryWriter(comment=f'_{self.shape}_{mode}{comment}')
+        checkpoint_dir = Path(self.writer.log_dir) / 'checkpoints'
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
         model = model.to(device)
 
@@ -79,6 +85,10 @@ class Trainer:
                         losses_test[3], losses_test[4]
                     )
             )
+
+            model.to('cpu')
+            torch.save(model, checkpoint_dir / f'{epoch}.model')
+            model.to(device)
 
         return model
 
@@ -160,21 +170,20 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
 
             if plot_sample:
                 plot_sample = False
-                print(x1.mean(), x1.min(), x1.max(), x1.shape)
-                writer.add_image('test/input',
-                                 x1.cpu(),
-                                 trainer.global_step)
-                writer.add_image('test/target',
-                                 val_x[0].cpu(),
-                                 trainer.global_step)
+                writer.add_images('test/input',
+                                  x1.cpu(),
+                                  trainer.global_step)
+                writer.add_images('test/target',
+                                  val_x[0].cpu(),
+                                  trainer.global_step)
                 for i, x in enumerate(out_x):
-                    writer.add_image(f'test/output{i}',
-                                     x.cpu(),
-                                     trainer.global_step)
+                    writer.add_images(f'test/output{i}',
+                                      x.cpu(),
+                                      trainer.global_step)
                 if mode == 'both':
-                    writer.add_image('test/target_1',
-                                     val_x[1].cpu(),
-                                     trainer.global_step)
+                    writer.add_images('test/target_1',
+                                      val_x[1].cpu(),
+                                      trainer.global_step)
 
             all_z.append(z[0])
             all_angles.append(label[:, 3:])
@@ -200,7 +209,6 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
                               trainer.global_step)
     for i in range(model.rot_dim):
         for j, name in enumerate(['theta', 'phi', 'gamma']):
-            print(all_angles.shape)
             fig, ax = plt.subplots()
             ax.scatter(all_angles[:, j], all_z[:, i], s=2)
             ax.set(xlabel=f'{name}', ylabel='z')
@@ -211,11 +219,20 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=str,
+                        choices=['square', 'cube', 'cat', 'eggbox'],
+                        default='square', required=False)
+    parser.add_argument('--mode', type=str,
+                        choices=['both', 'no_trans', 'no_rot'],
+                        default='both', required=False)
+    args = parser.parse_args()
+
     model = Model(trans_dim=3, rot_dim=4, w=128)
     optimizer = torch.optim.Adam(model.parameters(), 0.0001)
     sched = torch.optim.lr_scheduler.StepLR(optimizer, 30, 0.1)
-    trainer = Trainer('cube', 0, 1)
+    trainer = Trainer(args.dataset, 0, 1)
 
     loss_module = Loss_Module(bootstrap_L2, [lat_rot_loss, None])
     trainer.train(model, 100, optimizer, sched, loss_module, 'cuda',
-                  mode='both')
+                  mode=args.mode)
