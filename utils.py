@@ -157,7 +157,7 @@ class Codebook(nn.Module):
 
         self.init_book(data_loader, device)
         self = self.to(device)
-        self.k = 20
+        self.k = 1
 
         # different versions to extract the information of the latent space
         self.rot_module = mode_knn
@@ -306,7 +306,7 @@ def slerp(v0, v1, t_array):
 
 def symmetries(label, object_type='square'):
     assert(object_type != 'eggbox')  # symmetries for eggbox not defined yet
-    if 'cat':
+    if object_type == 'cat':
         return label
     else:
         return torch.fmod(label, 90)
