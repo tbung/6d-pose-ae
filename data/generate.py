@@ -23,6 +23,7 @@ def load_ply(name):
     vertices = np.zeros(mesh.vertices.shape[0], dtype=vtype)
     vertices['a_position'] = mesh.vertices - mesh.center_mass
     vertices['a_position'] /= np.abs(vertices['a_position']).max()
+    vertices['a_position'] *= 2
     vertices['a_normal'] = mesh.vertex_normals
     # vertices['a_color'] = mesh.visual.vertex_colors / 255
     vertices['a_color'] = np.ones_like(mesh.visual.vertex_colors)
