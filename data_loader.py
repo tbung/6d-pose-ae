@@ -14,8 +14,8 @@ class GeometricDataset(data.Dataset):
         self.root = Path(root)
         self.image_dirs = [
             self.root / "images",
-            self.root / "no_rotation",
             self.root / "no_translation",
+            self.root / "no_rotation",
         ]
         self.transform = transform
         self.mode = mode
