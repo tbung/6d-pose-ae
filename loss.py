@@ -8,10 +8,11 @@ from torchvision import models
 
 class Loss_Module(nn.Module):
     # initializer
-    def __init__(self, loss_rec, loss_lat=[None, None]):
+    def __init__(self, loss_rec, loss_lat=[None, None], lat_w=[1, 1]):
         super(Loss_Module, self).__init__()
         self.l_rec = loss_rec
         self.l_lat = loss_lat
+        self.lat_w = lat_w
 
     # forward pass
     def forward(self, x, x_, z, mode='no_trans'):
@@ -30,7 +31,7 @@ class Loss_Module(nn.Module):
 
             if self.l_lat[i] is not None:
                 v += 1
-                l[v] += self.l_lat[i](zr)
+                l[v] += self.l_lat[i](zr) * self.lat_w[i]
 
             if mode == 'no_trans' and i == 0:
                 break
@@ -66,6 +67,10 @@ def weighted_L1(x, y):
 def lat_rot_loss(z):
     l = (torch.abs(torch.norm(z, p=2, dim=1)-1.)).mean()
     return l
+
+
+def lat_trans_loss(z):
+    return (z**2).sum()
 
 
 # bootstrapL2 as implemented in the paper

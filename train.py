@@ -10,7 +10,7 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
 from pathlib import Path
-from loss import Loss_Module, bootstrap_L2, lat_rot_loss
+from loss import Loss_Module, bootstrap_L2, lat_rot_loss, lat_trans_loss
 from data_loader import get_loader
 from model import Model
 
@@ -226,13 +226,15 @@ if __name__ == "__main__":
     parser.add_argument('--mode', type=str,
                         choices=['both', 'no_trans', 'no_rot'],
                         default='both', required=False)
+    parser.add_argument('--trans-dim', type=int, default=3, required=False)
+    parser.add_argument('--rot-dim', type=int, default=4, required=False)
     args = parser.parse_args()
 
-    model = Model(trans_dim=3, rot_dim=4, w=128)
+    model = Model(trans_dim=args.trans_dim, rot_dim=args.rot_dim, w=128)
     optimizer = torch.optim.Adam(model.parameters(), 0.0001)
     sched = torch.optim.lr_scheduler.StepLR(optimizer, 30, 0.1)
     trainer = Trainer(args.dataset, 0, 1)
 
-    loss_module = Loss_Module(bootstrap_L2, [lat_rot_loss, None])
+    loss_module = Loss_Module(bootstrap_L2, [lat_rot_loss, lat_trans_loss], [1, 1e-3])
     trainer.train(model, 100, optimizer, sched, loss_module, 'cuda',
                   mode=args.mode)
