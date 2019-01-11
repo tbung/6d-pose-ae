@@ -81,7 +81,7 @@ def get_nearest_euclidean(z, z_book, label_book ,k, device):
     
     labels  = label_book[ind]
     labels  = labels.to(device)
-
+    
     return vals, ind, labels
 
 def renorm(x):
@@ -112,25 +112,26 @@ def create_codetensors(model, data_loader, device, step_ax = 0.1, step_rot = 1.)
     z_ax_book = []
     axis_book = []
     rot_book  = []
-    for i, (x, label) in enumerate(data_loader):
-        x   = x.to(device)
-        z   = model.encoder(x)
-        z1  = z[:,:model.split]
-        z2  = z[:, model.split:]
-        z1  = renorm(z1)
-        #z2  = renorm(z2) # z2 will be assumed to be 4dim with norm also set to 1
-        #z_rot_book.append(z1.to('cpu'))
-        #z_ax_book.append(z2.to('cpu'))
-        z_rot_book.append(z1)
-        z_ax_book.append(z2)
-        axis_book.append(label[:, :3]//step_ax * step_ax)
-        rot_book.append(label[:,3:]//step_rot * step_rot)
+    with torch.no_grad():
+        for i, (x, _1, _2, label) in enumerate(data_loader):
+            x   = x.to(device)
+            z   = model.encoder(x)
+            z1  = z[:,:model.split]
+            z2  = z[:, model.split:]
+            z1  = renorm(z1)
+            #z2  = renorm(z2) # z2 will be assumed to be 4dim with norm also set to 1
+            #z_rot_book.append(z1.to('cpu'))
+            #z_ax_book.append(z2.to('cpu'))
+            z_rot_book.append(z1)
+            z_ax_book.append(z2)
+            axis_book.append(label[:, :3]//step_ax * step_ax)
+            rot_book.append(label[:,3:]//step_rot * step_rot)
 
-    z_rot_book = torch.cat(z_rot_book, dim=0)
-    z_ax_book = torch.cat(z_ax_book, dim=0)
+        z_rot_book = torch.cat(z_rot_book, dim=0)
+        z_ax_book = torch.cat(z_ax_book, dim=0)
 
-    axis_book = torch.cat(axis_book, dim=0)
-    rot_book = torch.cat(rot_book, dim=0)
+        axis_book = torch.cat(axis_book, dim=0)
+        rot_book = torch.cat(rot_book, dim=0)
 
     return z_rot_book, rot_book, z_ax_book, axis_book
 
@@ -138,6 +139,9 @@ class Codebook(nn.Module):
     def __init__(self,model, data_loader, device):
         super(Codebook, self).__init__()
         self.model = model
+        self.step_ax = 0.1
+        self.step_rot = 1
+        model = model.eval()
         self.register_buffer('z_rot', None)
         self.register_buffer('z_trans', None)
         self.register_buffer('rot', None)
@@ -145,6 +149,7 @@ class Codebook(nn.Module):
 
         self.init_book(data_loader, device)
         self = self.to(device)
+        self.k = 20
 
 
         # different versions to extract the information of the latent space
@@ -152,13 +157,13 @@ class Codebook(nn.Module):
         self.trans_module = weighted_mean
 
     def init_book(self, data_loader, device):
-        books =  create_codetensors(self.model, data_loader, device, step_ax = 0.1, step_rot = 1.)
+        books =  create_codetensors(self.model, data_loader, device, step_ax = self.step_ax, step_rot = self.step_rot)
         for book in books:
             book = book.to(device)
-        self.z_rot.data = book[0]
-        self.rot.data = book[1]
-        self.z_trans.data = book[2]
-        self.trans.data = book[3]
+        self.z_rot = books[0]
+        self.rot = books[1]
+        self.z_trans = books[2]
+        self.trans = books[3]
         print('finished codebook initalization')
         
 
@@ -167,9 +172,10 @@ class Codebook(nn.Module):
         #z_list[0] -> z_rot
         #z_list[1] -> z_trans
         z_list, x_list = self.model(inputs)
-        k = 20
-        rotations = self.rot_module(get_nearest_cosine(z_list[0], self.z_rot, self.rot , k, self.device))
-        translations = self.trans_module(get_nearest_euclidean(z_list[1], self.z_trans, self.trans , k, self.device) )
+        tulple1 = get_nearest_cosine(z_list[0], self.z_rot, self.rot , self.k, next(self.buffers()).device)
+        tulple2 = get_nearest_euclidean(z_list[1], self.z_trans, self.trans , self.k, next(self.buffers()).device)
+        rotations = self.rot_module(*tulple1)
+        translations = self.trans_module(*tulple2 )
 
 
         return rotations, translations
@@ -289,6 +295,16 @@ def slerp(v0, v1, t_array):
     s0 = np.cos(theta) - dot * sin_theta / sin_theta_0
     s1 = sin_theta / sin_theta_0
     return (s0[:,None] * v0[None,:]) + (s1[:,None] * v1[None,:])
+
+
+def symmetries(label, object_type = 'square'):
+    assert(object_type!= 'eggbox') #symmetries for eggbox not defined yet
+    if 'cat':
+        label = label
+    else:
+        label = label%90
+
+    return label
 
         
 
