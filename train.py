@@ -236,5 +236,5 @@ if __name__ == "__main__":
     trainer = Trainer(args.dataset, 0, 1)
 
     loss_module = Loss_Module(bootstrap_L2, [lat_rot_loss, lat_trans_loss], [1, 1e-3])
-    trainer.train(model, 100, optimizer, sched, loss_module, 'cuda',
+    trainer.train(model, 70, optimizer, sched, loss_module, 'cuda',
                   mode=args.mode)
