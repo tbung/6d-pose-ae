@@ -2,7 +2,7 @@ import torch
 
 from data_loader import get_loader
 
-from utils import Codebook, symmetries
+from utils import Codebook, symmetries, symmetries_diff
 import argparse
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -61,9 +61,9 @@ if __name__ == "__main__":
         # print('trans',trans[:20])
         rot = symmetries(rot, object_type=args.dataset)
         rot_ = symmetries(rot_, object_type=args.dataset)
-        print(torch.abs(rot-rot_).max())
         with torch.no_grad():
             abs_diff = symmetries_diff(rot, rot_, object_type=args.dataset)
+            print(abs_diff.max())
             MSE_trans += ((trans-trans_)**2).mean(dim=0)/length
             MSE_rot += ((abs_diff)**2).mean(dim=0)/length
 
