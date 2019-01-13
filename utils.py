@@ -317,13 +317,13 @@ def symmetries_diff(label1, label2, object_type='square'):
     if object_type == 'cat':
         normal = torch.abs(label1 - label2)
         minus = torch.abs(label1-360 - label2)
-        values = torch.stack(normal, minus)
+        values = torch.stack([normal, minus])
         return torch.min(values, dim = 0)
         
     else:
         normal = torch.abs(label1 - label2)
         minus = torch.abs(label1-90 - label2)
-        values = torch.stack(normal, minus)
+        values = torch.stack([normal, minus])
         return torch.min(values, dim = 0)
 
 
