@@ -78,7 +78,7 @@ sorting=ynt
 The determination of 6D poses for known objects is a very important subject for robotics and augmented reality. For example in robotics it is crucial to have an accurate understanding of the position of an object to interact with it in a meaningful way. Almost the same applies to augmented reality because to enhance any object by rendering information on its visible surface it is important to know the position of the said object.\\
 There are many different ways to determine the 6D-Pose of a known object but in this work we will concentrate on a method which is based on the Augmented Autoencoder as designed by Martin Sundermeier et al. \cite{3D_Orientation_Learning}. This approach only uses RGB Images and does not require a big amount of labelled data to be trained because the autoencoder is tasked to reconstruct its input and not to predict the rotation and translation directly. This implicit learning makes it very robust against symmetries. Also in their paper they show that it can be fully trained on artificial generated images and also able to generalize to real images.\\
 The general goal of this work is to use the augmented autoencoder to disentangle the rotation and translation information in the latent space with a novel training scheme as well as to give an theoretical motivation for the rotation learning of the network which gets backed up by our experiments. Due to the training schedule the training is self-supervised and completely conducted on rendered images.\\
-All of our experiments are conducted on rendered data and also validated on rendered images. To render the images we used the open source renderer GLUMPY based on Numpy and OpenGL (XXXREFXX). \\  
+All of our experiments are conducted on rendered data and also validated on rendered images. To render the images we used the open source renderer GLUMPY \cite{GLUMPY} based on Numpy and OpenGL. \\  
 
 
 
@@ -114,10 +114,11 @@ $f$ can be any arbitrary augmentation or just the identity.
  \label{model_square}
     \centering
     \input{./fig_model.tex}
-    \caption{The Model}
+    \caption{Schematic of the model training schedule and its functionality from left to the right by mapping the input through the encoder to $z_{\trans}$ denoted as $z_1$ and $z_{\rot}$ denoted as $z_2$ through their respective decoders leading to two different reconstructions only preserving location or rotation of the object. These then are compared with the bootstrapped $L_2$-Loss for the reconstruction loss.\\
+    As can be observed in this figure the training schedule leads to the expected results for the squares dataset.}
 \end{figure}
 The motivation of the 6D-Pose-Autoencoder is to get two latent space $z_{\rot}$ and $z_{\trans}$ from which the 6D pose comprised of rotation and translation can be read out separately.
-Therefore $z_{\rot}$ encodes the orientation and should be invariant against translation while $z_{\text{trans}}$ encodes the translation while being invariant for rotations. This is done by taking two separate Augmented Autoencoder, one for the translation and one for the rotation. They receive the same input but are trained to reconstruct differently augmented versions of the input $x_{\text{rot}}$ and $x_{\text{trans}}$ . The training schedule is inspired by \textbf{Hypothesis 1}.
+Therefore $z_{\rot}$ encodes the orientation and should be invariant against translation while $z_{\trans}$ encodes the translation while being invariant for rotations. This is done by taking two separate Augmented Autoencoder, one for the translation and one for the rotation. They receive the same input but are trained to reconstruct differently augmented versions of the input $x_{\rot}$ and $x_{\trans}$ . The training schedule is inspired by \textbf{Hypothesis 1}.
 This is achieved by applying random augmentations $f_{\text{aug}}$ comprised of a $f_{\trans}$ and $f_{\rot}$ on the input $x$. 
 \begin{equation}
  \begin{aligned}
@@ -173,15 +174,39 @@ XXXXXXXXXXXXXXXXXXXXXX
 \subsection{2D Square in 3D Space}\label{Square}
 The goal of this experiment was to reproduce the qualitative result of Martin Sundermayer et al. \cite{3D_Orientation_Learning} with the AAE and show that the rotation and translation can be disentangled in principle with this training schedule. $z_{\rot}$ was defined to be in in $\mathbb{R}^2$ representing $\mathbb{C}$ as described in chapter \ref{Methods} due to the single rotation axis of the object. Due to the two perpendicular axes of symmetry the square posses we should see a shifted and cosine function with the frequency $f = \dfrac{4}{2 \pi}$, because the square appears exactly the same after a rotation of $\dfrac{\pi}{2}i$. \\
 The second part was to show that the translation could be extracted from the latent space representation $z_{\trans}$ and that different rotations have neglegible effect on it. The resulting plot for the correlation between $z_{\rot}$ and the rotation $\varphi$ as well as $z_{\trans}$ and the translation can be seen in figure XXXXXXXX.
+\begin{tabular}{l*{6}{c}r}
+Team              & P & W & D & L & F  & A & Pts \\
+\hline
+Manchester United & 6 & 4 & 0 & 2 & 10 & 5 & 12  \\
+Celtic            & 6 & 3 & 0 & 3 &  8 & 9 &  9  \\
+Benfica           & 6 & 2 & 1 & 3 &  7 & 8 &  7  \\
+FC Copenhagen     & 6 & 2 & 1 & 3 &  5 & 8 &  7  \\
+\end{tabular}
 \newpage
 \subsection{3D Cube}\label{Cube}
 In this experiment we wanted to expand our predictions to a more complex case by taking the next complex object from the 2D square in 3D, namely the 3D cube. the 3D cube can be rotated in 2 axes due to trivial reasons of symmetry which leads to the conclusion that the rotations should be able to be represented by a hyper-sphere in 3 dimensions. So $z_{\rot}$ was chosen to be element of $\mathbb{R}^3$. The correlations between $z_{\rot}$ and the rotations as well as $z_{\trans}$ and the translation can be seen in figure XXXXXXXX.
 Due to the more complex nature of the correlations in this case we also used the codebook created with our fully trained model to show the capabilty of this architecture. The resulting errors can be seen in table XXXXXXXXXXXX.
+\begin{tabular}{l*{6}{c}r}
+Team              & P & W & D & L & F  & A & Pts \\
+\hline
+Manchester United & 6 & 4 & 0 & 2 & 10 & 5 & 12  \\
+Celtic            & 6 & 3 & 0 & 3 &  8 & 9 &  9  \\
+Benfica           & 6 & 2 & 1 & 3 &  7 & 8 &  7  \\
+FC Copenhagen     & 6 & 2 & 1 & 3 &  5 & 8 &  7  \\
+\end{tabular}
 \newpage
 \subsection{Line Mod}
 Our final experiments were conducted on the LINE MOD created by Stefan Hinterstoisser \cite{LINEMOD} to evaluate the capability of the 6D Pose AE on two very different objects. Namely the cat and the egg-box where the model should show that it can be used on cases with no symmetry like the cat as well as many symmetries such as the egg-box in general cases with all 3 rotations and thereby the resulting latent space representations $z_{\rot} \in \mathbb{R}^4$. Ideally the resulting model can be used to determine the 3 rotation values as well as to be able to detect rotation symmetries like in the egg box by itself making it very robust against ambiguities. 
 \subsubsection{Cat}
-As mentioned before the cat object of the line mod dataset has no symmetries which makes it a good proof of concept to show that the 3 rotations can be displayed by the network on the unity sphere in $\mathbb{R}^N$ which makes it a generalization of the hamiltonians $\mathbb{H}$. Also this allows us to test whether this assumption really fits by calculating the resulting $i, j \text{ and } k$ of two rotations and applying (multiplicating) them onto each other. The resulting quaternion is then compared with the quaternion which we get by computing the quaternion we get from the network predicted.
+As mentioned before the cat object of the line mod dataset has no symmetries which makes it a good proof of concept to show that the 3 rotations can be displayed by the network on the unity sphere in $\mathbb{R}^4$ which makes it a generalization of the quaternions $\mathbb{Q}$. Also this allows us to test whether this assumption really fits by calculating the resulting $i, j \text{ and } k$ of two rotations and applying (multiplicating) them onto each other. The resulting quaternion is then compared with the quaternion which we get by computing the quaternion we get from the network predicted.
+\begin{tabular}{l*{6}{c}r}
+Team              & P & W & D & L & F  & A & Pts \\
+\hline
+Manchester United & 6 & 4 & 0 & 2 & 10 & 5 & 12  \\
+Celtic            & 6 & 3 & 0 & 3 &  8 & 9 &  9  \\
+Benfica           & 6 & 2 & 1 & 3 &  7 & 8 &  7  \\
+FC Copenhagen     & 6 & 2 & 1 & 3 &  5 & 8 &  7  \\
+\end{tabular}
 
 \subsubsection{Egg Box}
 The Egg Box has many symmetries and the ideal case is that the network learns these symmetries by changing the frequencies of the latent space repetitions in $z_{\rot}$
@@ -196,9 +221,9 @@ In general this model thereby allows a more accurate estimation of the 3D transl
 It is also easily able to detect on which object the network is basing its prediction of the codebook by checking the translation reconstruction in case of misspredictions or multiple objects of the same class.\\
 
  
-
+\newpage
 \section{Sources}\label{Sources}
-\printbibliography*
+\printbibliography
 
 
 
