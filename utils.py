@@ -317,18 +317,20 @@ def symmetries_diff(label1, label2, object_type='square'):
     if object_type == 'cat':
         normal = torch.abs(label1 - label2)
         minus = torch.abs(label1-360 - label2)
-        values = torch.stack([normal, minus])
-        return torch.min(values, dim = 0)
+        values = torch.stack([normal, minus]).fmod(360)
+
         
     else:
         normal = torch.abs(label1 - label2)
         minus = torch.abs(label1-90 - label2)
-        values = torch.stack([normal, minus])
-        return torch.min(values, dim = 0)
+        values = torch.stack([normal, minus]).fmod(90)
+    print(values)
+
+    return torch.min(values, dim = 0)[0]
 
 
 def main():
-    z = torch.ones(10, 2)
+    """z = torch.ones(10, 2)
     z = renorm(z)
     z_book = torch.randn(100, 2)
     z_book = renorm(z_book)
@@ -347,7 +349,10 @@ def main():
 
     print('mode kNN', mode_knn(vals, ind, labels))
     z_slerp = slerp(z_book[0], z_book[1], torch.arange(0, 1, 0.3))
-    print(z_slerp)
+    print(z_slerp)"""
+    rot1 = torch.tensor([3., 92., 87.])
+    rot2 = torch.zeros(3)
+    print(symmetries_diff(rot1, rot2))
 
 
 if __name__ == "__main__":
