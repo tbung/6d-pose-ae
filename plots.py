@@ -123,6 +123,24 @@ def correlation_plots():
         all_angles = torch.cat(all_angles, dim=0).cpu()
         all_axis = torch.cat(all_axis, dim=0).cpu()
 
+        if shape == square:
+            all_m_angles = all_angles//1
+            angle_list  = torch.arange(0,361)
+            angle_z     = torch.zeros(360)
+            for i, angle in enumerate(angle_list):
+                angle_z[i] = all_z[all_m_angles== angle].mean(dim=0)
+
+
+            for i in range(model.rot_dim):
+                for j, name in enumerate(['theta', 'phi', 'gamma']):
+                    fig, ax = plt.subplots()
+                    ax.scatter(angle_list[:, j], angle_z[:, i], s=2)
+                    ax.set(xlabel=f'$\\{name}$', ylabel=f'$z_{i}$')
+                    printfig(f'./figures/{shape}_/rot_mean_{name}_z{i}')
+                    plt.close()
+
+            
+
         for i in range(model.trans_dim):
             for j, name in enumerate(['x', 'y', 'z']):
                 fig, ax = plt.subplots()
@@ -137,6 +155,17 @@ def correlation_plots():
                 ax.set(xlabel=f'$\\{name}$', ylabel=f'$z_{i}$')
                 printfig(f'./figures/{shape}_/rot_{name}_z{i}')
                 plt.close()
+
+        for j, name in enumerate(['theta', 'phi', 'gamma']):
+            fig, ax = plt.subplots()
+            ax.set(xlabel=f'$\\{name}$', ylabel='$z_{rot}$')
+            for i in range(model.rot_dim):
+                ax.scatter(all_angles[:, j], all_z[:, i], s=2)
+            printfig(f'./figures/{shape}_/rot_{name}_z_all')
+            plt.close()
+                
+
+
 
 
 if __name__ == '__main__':
