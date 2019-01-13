@@ -195,10 +195,10 @@ def ae_eval(model, loss_mod, loader, mode, device, writer, trainer):
             for i in range(len(loss)):
                 losses[i] += loss[i].item() * 100
 
-    all_z = torch.cat(all_z, dim=0)
-    all_z_ax = torch.cat(all_z_ax, dim=0)
-    all_angles = torch.cat(all_angles, dim=0)
-    all_axis = torch.cat(all_axis, dim=0)
+    all_z = torch.cat(all_z, dim=0).cpu()
+    all_z_ax = torch.cat(all_z_ax, dim=0).cpu()
+    all_angles = torch.cat(all_angles, dim=0).cpu()
+    all_axis = torch.cat(all_axis, dim=0).cpu()
 
     for i in range(model.trans_dim):
         for j, name in enumerate(['x', 'y', 'z']):
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     parser.add_argument('--rot-dim', type=int, default=4, required=False)
     args = parser.parse_args()
 
-    model = Model(trans_dim=args.trans_dim, rot_dim=args.rot_dim, w=128)
+    model = Model(trans_dim=args.trans_dim, rot_dim=args.rot_dim, w=128, d=128)
     optimizer = torch.optim.Adam(model.parameters(), 0.0001)
     sched = torch.optim.lr_scheduler.StepLR(optimizer, 30, 0.1)
     trainer = Trainer(args.dataset, 0, 1)
