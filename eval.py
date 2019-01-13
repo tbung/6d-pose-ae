@@ -63,8 +63,9 @@ if __name__ == "__main__":
         rot_ = symmetries(rot_, object_type=args.dataset)
         print(torch.abs(rot-rot_).max())
         with torch.no_grad():
+            abs_diff = symmetries_diff(rot, rot_, object_type=args.dataset)
             MSE_trans += ((trans-trans_)**2).mean(dim=0)/length
-            MSE_rot += ((rot-rot_)**2).mean(dim=0)/length
+            MSE_rot += ((abs_diff)**2).mean(dim=0)/length
 
     print(MSE_trans)
     print(MSE_rot)

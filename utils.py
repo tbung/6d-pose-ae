@@ -312,6 +312,20 @@ def symmetries(label, object_type='square'):
     else:
         return torch.fmod(label, 90)
 
+def symmetries_diff(label1, label2, object_type='square'):
+    assert(object_type != 'eggbox')  # symmetries for eggbox not defined yet
+    if object_type == 'cat':
+        normal = torch.abs(label1 - label2)
+        minus = torch.abs(label1-360 - label2)
+        values = torch.stack(normal, minus)
+        return torch.min(values, dim = 0)
+        
+    else:
+        normal = torch.abs(label1 - label2)
+        minus = torch.abs(label1-90 - label2)
+        values = torch.stack(normal, minus)
+        return torch.min(values, dim = 0)
+
 
 def main():
     z = torch.ones(10, 2)
