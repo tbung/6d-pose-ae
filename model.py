@@ -31,7 +31,7 @@ class Encoder(nn.Module):
         k = 3
         pad = 0
         st = 2
-        dims = [chan, d, d*2, d*2, d*4]
+        dims = [chan, d, d*2, d*4, d*4]
 
         if leaky > 0:
             self.activ = nn.LeakyReLU()
@@ -84,7 +84,7 @@ class Decoder(nn.Module):
         k = 3
         pad = 1
         st = 1
-        dims = [d*4, d*2, d*2, d, chan]
+        dims = [d*4, d*4, d*2, d, chan]
 
         if leaky > 0:
             self.activ = nn.LeakyReLU()
