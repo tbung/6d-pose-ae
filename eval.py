@@ -5,6 +5,7 @@ from data_loader import get_loader
 from utils import Codebook, symmetries
 import argparse
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 if torch.cuda.is_available():
     device = 'cuda'
@@ -65,6 +66,8 @@ if __name__ == "__main__":
             MSE_trans += ((trans-trans_)**2).mean(dim=0)/length
             MSE_rot += ((rot-rot_)**2).mean(dim=0)/length
 
-    print(length)
     print(MSE_trans)
     print(MSE_rot)
+
+plt.scatter(codebook.z_rot[:, 0].cpu().numpy(), codebook.rot[:, 0].cpu().numpy())
+plt.show()

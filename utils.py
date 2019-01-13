@@ -63,7 +63,8 @@ def create_folder(folder):
 def get_nearest_cosine(z, z_book, label_book, k, device):
     #z, z_book = z.to(device), z_book.to(device)
     with torch.no_grad():
-        z_ = renorm(z)
+        # z_ = renorm(z)
+        z_ = z
         z_cos = (z_[:, None, :] * z_book[None, :, :]).sum(dim=2)
         vals, ind = z_cos.topk(k, dim=1)
 
@@ -125,7 +126,7 @@ def create_codetensors(model, data_loader, device, step_ax=0.1, step_rot=1.):
             z = model.encoder(x)
             z1 = z[:, :model.split]
             z2 = z[:, model.split:]
-            z1 = renorm(z1)
+            # z1 = renorm(z1)
             # z2  = renorm(z2) # z2 will be assumed to be 4dim with norm also set to 1
             # z_rot_book.append(z1.to('cpu'))
             # z_ax_book.append(z2.to('cpu'))
@@ -157,7 +158,7 @@ class Codebook(nn.Module):
 
         self.init_book(data_loader, device)
         self = self.to(device)
-        self.k = 1
+        self.k = 10
 
         # different versions to extract the information of the latent space
         self.rot_module = mode_knn
@@ -178,7 +179,7 @@ class Codebook(nn.Module):
         # z_list[0] -> z_rot
         # z_list[1] -> z_trans
         z_list, x_list = self.model(inputs)
-        tulple1 = get_nearest_cosine(
+        tulple1 = get_nearest_euclidean(
             z_list[0], self.z_rot, self.rot, self.k, next(self.buffers()).device)
         tulple2 = get_nearest_euclidean(
             z_list[1], self.z_trans, self.trans, self.k, next(self.buffers()).device)
