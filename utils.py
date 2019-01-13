@@ -317,14 +317,16 @@ def symmetries_diff(label1, label2, object_type='square'):
     if object_type == 'cat':
         normal = torch.abs(label1 - label2)
         minus = torch.abs(label1-360 - label2)
-        values = torch.stack([normal, minus]).fmod(360)
+        plus = torch.abs(label1+360 - label2)
+        values = torch.stack([plus,normal, minus]).fmod(360)
 
         
     else:
         normal = torch.abs(label1 - label2)
         minus = torch.abs(label1-90 - label2)
-        values = torch.stack([normal, minus]).fmod(90)
-    print(values)
+        plus = torch.abs(label1+90 - label2)
+        values = torch.stack([plus,normal, minus]).fmod(90)
+    #print(values)
 
     return torch.min(values, dim = 0)[0]
 
@@ -353,6 +355,7 @@ def main():
     rot1 = torch.tensor([3., 92., 87.])
     rot2 = torch.zeros(3)
     print(symmetries_diff(rot1, rot2))
+    print(symmetries_diff(rot2, rot1))
 
 
 if __name__ == "__main__":
