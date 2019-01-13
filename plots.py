@@ -108,10 +108,10 @@ def correlation_plots():
 
                 if plot_sample:
                     plot_sample = False
-                    save_image(x1.cpu(), f'./figures/{shape}_input.png', pad_value=0.5)
+                    save_image(x1.cpu(), f'./figures/{shape}_/input.png', pad_value=0.5)
                     for i, x in enumerate(out_x):
-                        save_image(x.cpu(), f'./figures/{shape}_output{i}.png', pad_value=0.5)
-                        save_image(val_x[i].cpu(), f'./figures/{shape}_target{i}.png', pad_value=0.5)
+                        save_image(x.cpu(), f'./figures/{shape}_/output{i}.png', pad_value=0.5)
+                        save_image(val_x[i].cpu(), f'./figures/{shape}_/target{i}.png', pad_value=0.5)
 
                 all_z.append(z[0])
                 all_angles.append(label[:, 3:])
@@ -128,14 +128,14 @@ def correlation_plots():
                 fig, ax = plt.subplots()
                 ax.scatter(all_axis[:, j], all_z_ax[:, i], s=2)
                 ax.set(xlabel=f'${name}$', ylabel=f'$z_{i}$')
-                printfig(f'./figures/{shape}_{name}_z{i}')
+                printfig(f'./figures/{shape}_/trans_{name}_z{i}')
                 plt.close()
         for i in range(model.rot_dim):
             for j, name in enumerate(['theta', 'phi', 'gamma']):
                 fig, ax = plt.subplots()
                 ax.scatter(all_angles[:, j], all_z[:, i], s=2)
                 ax.set(xlabel=f'$\\{name}$', ylabel=f'$z_{i}$')
-                printfig(f'./figures/{shape}_{name}_z{i}')
+                printfig(f'./figures/{shape}_/rot_{name}_z{i}')
                 plt.close()
 
 
