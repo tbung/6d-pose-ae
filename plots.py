@@ -118,24 +118,24 @@ def correlation_plots():
                 all_axis.append(label[:, :3])
                 all_z_ax.append(z[1])
 
-        all_z = torch.cat(all_z, dim=0)
-        all_z_ax = torch.cat(all_z_ax, dim=0)
-        all_angles = torch.cat(all_angles, dim=0)
-        all_axis = torch.cat(all_axis, dim=0)
+        all_z = torch.cat(all_z, dim=0).cpu()
+        all_z_ax = torch.cat(all_z_ax, dim=0).cpu()
+        all_angles = torch.cat(all_angles, dim=0).cpu()
+        all_axis = torch.cat(all_axis, dim=0).cpu()
 
         for i in range(model.trans_dim):
             for j, name in enumerate(['x', 'y', 'z']):
                 fig, ax = plt.subplots()
                 ax.scatter(all_axis[:, j], all_z_ax[:, i], s=2)
-                ax.set(xlabel=f'${name}$', ylabel=f'$z_{j}$')
-                printfig(f'./figures/{shape}_{name}_z{j}')
+                ax.set(xlabel=f'${name}$', ylabel=f'$z_{i}$')
+                printfig(f'./figures/{shape}_{name}_z{i}')
                 plt.close()
         for i in range(model.rot_dim):
             for j, name in enumerate(['theta', 'phi', 'gamma']):
                 fig, ax = plt.subplots()
                 ax.scatter(all_angles[:, j], all_z[:, i], s=2)
-                ax.set(xlabel=f'$\\{name}$', ylabel=f'$z_{j}$')
-                printfig(f'./figures/{shape}_{name}_z{j}')
+                ax.set(xlabel=f'$\\{name}$', ylabel=f'$z_{i}$')
+                printfig(f'./figures/{shape}_{name}_z{i}')
                 plt.close()
 
 
