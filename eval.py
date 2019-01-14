@@ -67,8 +67,8 @@ if __name__ == "__main__":
             MSE_trans += ((trans-trans_)**2).mean(dim=0)/length
             MSE_rot += ((abs_diff)**2).mean(dim=0)/length
 
-    print(MSE_trans)
-    print(MSE_rot)
+    print(torch.sqrt(MSE_trans))
+    print(torch.sqrt(MSE_rot))
 
 plt.scatter(codebook.z_rot[:, 0].cpu().numpy(), codebook.rot[:, 0].cpu().numpy())
 plt.show()

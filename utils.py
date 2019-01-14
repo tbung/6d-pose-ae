@@ -316,7 +316,7 @@ def symmetries(label, object_type='square'):
 def symmetries_diff(label1, label2, object_type='square'):
     assert(object_type != 'eggbox')  # symmetries for eggbox not defined yet
     if object_type == 'cat':
-        return 180 - torch.abs(torch.abs(label1 -label2) - 45)
+        return 180 - torch.abs(torch.abs(label1 -label2) - 180)
     else:
         return 45 - torch.abs(torch.abs(label1 -label2) - 45)
 
