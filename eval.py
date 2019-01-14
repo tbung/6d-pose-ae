@@ -6,6 +6,7 @@ from utils import Codebook, symmetries, symmetries_diff
 import argparse
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import utils
 
 if torch.cuda.is_available():
     device = 'cuda'
@@ -61,14 +62,27 @@ if __name__ == "__main__":
         # print('trans',trans[:20])
         rot = symmetries(rot, object_type=args.dataset)
         rot_ = symmetries(rot_, object_type=args.dataset)
+        cos_sim_mean = torch.zero(1)
+        cos_sim_std = torch.zero(1)
+
         with torch.no_grad():
             abs_diff = symmetries_diff(rot, rot_, object_type=args.dataset)
             print(abs_diff.max())
             MSE_trans += ((trans-trans_)**2).mean(dim=0)/length
             MSE_rot += ((abs_diff)**2).mean(dim=0)/length
+            q = utils.euler_to_quaternion(rot)
+            q_ = utils.euler_to_quaternion(rot_)
+
+            cos_sim = utils.cosine_similarity(q,q_)
+            cos_sim_mean += cos_sim.mean()/length
+            cos_sim_std += cos_sim.std()/length
+            
 
     print(torch.sqrt(MSE_trans))
     print(torch.sqrt(MSE_rot))
+    print(cos_sim_mean)
+    print(cos_sim_std)
+
 
 plt.scatter(codebook.z_rot[:, 0].cpu().numpy(), codebook.rot[:, 0].cpu().numpy())
 plt.show()

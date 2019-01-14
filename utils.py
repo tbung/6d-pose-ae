@@ -73,6 +73,10 @@ def get_nearest_cosine(z, z_book, label_book, k, device):
 
     return vals, ind, labels
 
+def cosine_similarity(z1, z2):
+    z_cos = (z1[:, None, :] * z2[None, :, :]).sum(dim=2)
+    return z_cos
+
 # Get KNN for eucildean distance
 
 
@@ -319,6 +323,25 @@ def symmetries_diff(label1, label2, object_type='square'):
         return 180 - torch.abs(torch.abs(label1 -label2) - 180)
     else:
         return 45 - torch.abs(torch.abs(label1 -label2) - 45)
+
+def euler_to_quaternion(zyx):
+    #zyx : torch tensor N x (Z, Y, X):
+    cZ = torch.cos(zyx[:,2] * 0.5)
+    sZ = torch.sin(zyx[:,2] * 0.5)
+    cY = torch.cos(zyx[:,1] * 0.5)
+    sY = torch.sin(zyx[:,1] * 0.5)
+    cX = torch.cos(zyx[:,0] * 0.5)
+    sX = torch.sin(zyx[:,0] * 0.5)
+
+    q0 = cZ * cY * cX + sZ * sY * sX
+    q1 = cZ * cY * sX - sZ * sY * cX
+    q2 = sZ * cY * sX + cZ * sY * cX
+    q3 = sZ * cY * cX - cZ * sY * sX
+
+    return torch.stack([q0,q1,q2,q3], dim=1)
+
+
+
 
 
 def main():
