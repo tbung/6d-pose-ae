@@ -74,7 +74,7 @@ def get_nearest_cosine(z, z_book, label_book, k, device):
     return vals, ind, labels
 
 def cosine_similarity(z1, z2):
-    z_cos = (z1[:, None, :] * z2[None, :, :]).sum(dim=2)
+    z_cos = (z1 * z2).sum(dim=1)
     return z_cos
 
 # Get KNN for eucildean distance
@@ -312,7 +312,7 @@ def slerp(v0, v1, t_array):
 def symmetries(label, object_type='square'):
     assert(object_type != 'eggbox')  # symmetries for eggbox not defined yet
     if object_type == 'cat':
-        label[:,1:] = torch.fmod(label[:,1:], 180)
+        #label[:,1:] = torch.fmod(label[:,1:], 180)
         return label
     else:
         return torch.fmod(label, 90)
@@ -326,6 +326,7 @@ def symmetries_diff(label1, label2, object_type='square'):
 
 def euler_to_quaternion(zyx):
     #zyx : torch tensor N x (Z, Y, X):
+    zyx = zyx* np.pi/180.
     cZ = torch.cos(zyx[:,2] * 0.5)
     sZ = torch.sin(zyx[:,2] * 0.5)
     cY = torch.cos(zyx[:,1] * 0.5)
@@ -340,12 +341,21 @@ def euler_to_quaternion(zyx):
 
     return torch.stack([q0,q1,q2,q3], dim=1)
 
+def quaternion_distance(e1, e2):
+    q1 = euler_to_quaternion(e1)
+    q2 = euler_to_quaternion(e2)
+    print(q1)
+    print(q2)
+    sim = cosine_similarity(q1, q2)
+
+    return sim
+
 
 
 
 
 def main():
-    z = torch.ones(10, 2)
+    """z = torch.ones(10, 2)
     z = renorm(z)
     z_book = torch.randn(100, 2)
     z_book = renorm(z_book)
@@ -364,8 +374,18 @@ def main():
 
     print('mode kNN', mode_knn(vals, ind, labels))
     z_slerp = slerp(z_book[0], z_book[1], torch.arange(0, 1, 0.3))
-    print(z_slerp)
+    print(z_slerp)"""
 
+    e1 = torch.zeros(5,3)
+    e2 = torch.tensor([
+        [360., 1., 3.],
+        [0.,0.,0.],
+        [90., 90., 90.],
+        [180., 0., 0.],
+        [360., 0., 0.]
+
+    ])
+    print(quaternion_distance(e1, e2))
 
 if __name__ == "__main__":
     main()

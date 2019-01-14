@@ -70,10 +70,8 @@ if __name__ == "__main__":
             print(abs_diff.max())
             MSE_trans += ((trans-trans_)**2).mean(dim=0)/length
             MSE_rot += ((abs_diff)**2).mean(dim=0)/length
-            q = utils.euler_to_quaternion(rot)
-            q_ = utils.euler_to_quaternion(rot_)
 
-            cos_sim = utils.cosine_similarity(q,q_)
+            cos_sim = utils.quaternion_distance(rot, rot_)
             cos_sim_mean += cos_sim.mean()/length
             cos_sim_std += cos_sim.std()/length
             
