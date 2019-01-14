@@ -308,6 +308,7 @@ def slerp(v0, v1, t_array):
 def symmetries(label, object_type='square'):
     assert(object_type != 'eggbox')  # symmetries for eggbox not defined yet
     if object_type == 'cat':
+        label[:,1:] = torch.fmod(label[:,1:], 180)
         return label
     else:
         return torch.fmod(label, 90)
