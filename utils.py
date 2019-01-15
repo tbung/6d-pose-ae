@@ -104,8 +104,9 @@ def lazy_mean(vals, ind, labels):
 
 
 def weighted_mean(vals, ind, labels):
-    weights = F.softmax(vals, dim=1)
-    return (labels*weights[:, :, None]).mean(dim=1)
+    # weights = F.softmax(vals, dim=1)
+    weights = -1/vals
+    return (labels*weights[:, :, None]).sum(dim=1)/weights[:, :, None].sum(dim=1)
 
 
 # Implementation of KNN for decision problem
@@ -162,7 +163,7 @@ class Codebook(nn.Module):
 
         self.init_book(data_loader, device)
         self = self.to(device)
-        self.k = 10
+        self.k = 30
 
         # different versions to extract the information of the latent space
         self.rot_module = mode_knn
@@ -344,9 +345,9 @@ def euler_to_quaternion(zyx):
 def quaternion_distance(e1, e2):
     q1 = euler_to_quaternion(e1)
     q2 = euler_to_quaternion(e2)
-    print(q1)
-    print(q2)
-    sim = cosine_similarity(q1, q2)
+    # print(q1)
+    # print(q2)
+    sim = torch.abs(cosine_similarity(q1, q2))
 
     return sim
 
@@ -381,7 +382,7 @@ def main():
         [360., 1., 3.],
         [0.,0.,0.],
         [90., 90., 90.],
-        [180., 0., 0.],
+        [180., 0., 180.],
         [360., 0., 0.]
 
     ])
