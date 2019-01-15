@@ -165,10 +165,10 @@ For the translation the euclidean distance was chosen as distance metric to dete
 \end{equation}
 
 
-
 \newpage
 \section{Evalutation}\label{Evaluation}
-In the following section we present our results as well as the methods used to investigate the behaviour of the 6D-AE and to verify the assumptions made in the chapter methods \ref{Methods}.
+In the following section we present our results as well as the methods used to investigate the behaviour of the 6D-AE and to verify the assumptions made in the chapter methods \ref{Methods}.\\
+The metric we used to determine the quality of our model is the Visible Surface Discrepancy Metric designed by Hodan et al. 
 \subsection{2D Square in 3D Space}\label{Square}
 In this experiment we focused on reproducing the qualitative results of the Augmented Autoencoder which can be seen in figure \ref{SQUARE_Martin} and disentangling the latent space representation of the translation and rotation with the training scheme represented in the chapter \ref{6D Pose Autoencoder}. The resulting reconstructions allow conclusion on the orientation of the square and only contain either translation or rotation. They can be seen in figure \ref{square_images} in the appendix.\\
 $z_{\rot}$ was defined to be in in $\mathbb{R}^2$ representing $\mathbb{C}$ as described in chapter \ref{Methods} due to the single rotation axis of the object. Due to the two perpendicular axes of symmetry the square posses we anticipated to see a shifted and cosine function with the frequency $f = 2/ \pi$, because the square appears exactly the same after a rotation of $\dfrac{\pi}{2}i$. \\
