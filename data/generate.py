@@ -228,9 +228,9 @@ def render(shape, n_samples, imgsize, fixed_z=True,
             if not fixed_z:
                 z = np.random.random_sample() * (max_z - min_z) + min_z
             if shape == 'cube':
-                phi = np.random.random_sample() * 360
+                phi = np.random.random_sample() * 180
             if shape in shapes:
-                phi = np.random.random_sample() * 360
+                phi = np.random.random_sample() * 180
                 gamma = np.random.random_sample() * 360
 
         window.clear()
@@ -351,13 +351,13 @@ def render_depth(shape, imgsize, R, t):
         # Rotate cube
         model = np.eye(4, dtype=np.float32)
 
-        R_ = np.eye(4)
-        R_[:3, :3] = R
-
-        model = R_ @ model
+        # model = R_ @ model
+        glm.rotate(model, R[0], 0, 0, 1)
+        glm.rotate(model, R[1], 0, 1, 0)
+        glm.rotate(model, R[2], 1, 0, 0)
 
         # Translate cube
-        glm.translate(model, *t[0])
+        glm.translate(model, *t)
 
         cube['u_model'] = model
         # cube['u_normal'] = np.array(np.matrix(np.dot(view, model)).I.T)
