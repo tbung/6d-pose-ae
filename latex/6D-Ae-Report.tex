@@ -185,7 +185,7 @@ The plot for $\theta$ shows a periodic behaviour with the correct correct freque
 \end{subfigure}
 \begin{subfigure}{0.49\textwidth}
 	\centering	
-	\includegraphics[width=\textwidth]{square_theta_z0.pdf}
+	\includegraphics[width=\textwidth]{square_theta_z1.pdf}
 	\caption{}
 	\label{fig_z1}
 \end{subfigure}
@@ -274,12 +274,17 @@ The different dimensions are differently colored and show clear periodic behavio
 
 
 \newpage
-\subsection{Line Mod}
-Our final experiments were conducted on the LINE MOD created by Stefan Hinterstoisser \cite{LINEMOD} to evaluate the capability of the 6D Pose AE on two very different objects. Namely the cat and the egg-box where the model should show that it can be used on cases with no symmetry like the cat as well as many symmetries such as the egg-box in general cases with all 3 rotations and thereby the resulting latent space representations $z_{\rot} \in \mathbb{R}^4$. Ideally the resulting model can be used to determine the 3 rotation values as well as to be able to detect rotation symmetries like in the egg box by itself making it very robust against ambiguities. 
-\subsubsection{Cat}
-As mentioned before the cat object of the line mod dataset has no symmetries which makes it a good proof of concept to show that the 3 rotations can be displayed by the network on the unity sphere in $\mathbb{R}^4$ which makes it a generalization of the quaternions $\mathbb{Q}$. Also this allows us to test whether this assumption really fits by calculating the resulting $i, j \text{ and } k$ of two rotations and applying (multiplicating) them onto each other. The resulting quaternion is then compared with the quaternion which we get by computing the quaternion we get from the network predicted.
+\subsection{Line Mod: Cat}
+The final experiment was conducted on the Cat of the Line Mod dataset which is created by Stefan Hinterstoisser \cite{LINEMOD}.
+The cat is a much more complex object than the cube with no symmetries and more contours. Also we added the third rotation leading to now complete Euler angles for the rotations. The training used is identically to schedule for cubes and squares. \\
+The lack of any symmetries would be a powerful way to prove that the 3 Euler rotations can be represented by the unity sphere in $\mathbb{R}^4$, a generalization of the quaternions $\mathbb{Q}$.\\
+Because the reconstructions of this the AAE with $z_{\rot}$ being 4 dimensional were not satisfying which is why decided to also train a model with $z_{\rot}$ being 64 dimensional. The reconstructions of both models can be seen in figure \ref{cat_images} where the reconstructions of the model with 4 latent rotational dimensions has washed out reconstruction with ambiguous rotations, where head and body cannot clearly be separated. \\
+Also we could not find any correlations in the rotational latent space to any euler angle for Model 1. Due to the big latent space we did not even attempt to find correlations by hand for Model 2. Our only way to verify the quality of the latent space thereby is the prediction of the correct pose via the codebook for Model 2 and also Model 1. \\
 
-The reconstructions of this object with $z_{\rot}$ being 4 dimensional were not satisfying which is why decided to also train a model with $z_{\rot}$ being 64 dimensional. Both reconstructions can be seen in figure \ref{cat_images}. The vsd errors for both of these models where: XXXXXXXXXX
+
+
+
+ Both reconstructions can be seen in figure \ref{cat_images}. The vsd errors for both of these models where: XXXXXXXXXX
 
 \begin{figure}[!ht]
 \centering
@@ -312,30 +317,29 @@ The reconstructions of this object with $z_{\rot}$ being 4 dimensional were not 
 	\centering	
 	\includegraphics[width=\textwidth]{cat_target1.png}
 	\caption{Translation target}
-	\label{cube_t}
+	\label{cat_t}
 \end{subfigure}
 \begin{subfigure}{0.3\textwidth}
 	\centering	
 	\includegraphics[width=\textwidth]{cat_4_output1.png}
 	\caption{Translation Model 1}
-	\label{cube_trec}
+	\label{cat_trec}
 \end{subfigure}
 \begin{subfigure}{0.3\textwidth}
 	\centering	
 	\includegraphics[width=\textwidth]{cat_64_output1.png}
 	\caption{Translation Model 2}
-	\label{cube_trec1}
+	\label{cat_trec1}
 \end{subfigure}
-\caption{Comparision between reconstructions and targets for the two AAEs. 
+\caption{Comparision between reconstructions and targets of the two AAEs. 
 Dimensions of $z_{\rot}$: 4 for Model 1 and 64 for Model 2.\\
 The reconstructions of Model 2 show much more detail and are less ambiguous regarding to the reconstructed rotation than the reconstructions of Model 1.} \label{cat_images}
 \end{figure}
 
-
-\subsubsection{Egg Box}
-The Egg Box has many symmetries and the ideal case is that the network learns these symmetries by changing the frequencies of the latent space repetitions in $z_{\rot}$
 \newpage
 \section{Conclusion}
+
+
 The general concept of this work namely the split in rotational latent space $z_{\rot}$ and translational latent space $z_{\trans}$ of the augmented autoencoder was shown to work  extremely well by restricting the size of the latent space in experiments A TO B.\\
 We were able to extract the 3D orientation as well as the 3D rotation with regard to the camera of the object with the codebook.\\
 \\
