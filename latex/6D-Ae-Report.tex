@@ -206,7 +206,7 @@ CAT     & 6 & 2 & 1 & 3 &  5 & 8 &  7  \\
 \caption{Resulting predicted values by using the codebook with distinct similarity metrics and $K$ for the kNN prediction.}
 \label{square_results}
 \end{table}
-Additionally we interpolated in the $z_{\trans}$ and $z_{\rot}$ space. There it verifies that our assumptions about the unity circle were not correct because it did not show the anticipated behaviour for the rotations which can be observed in figure \ref{square_ipol}, where the interpolations show that in the range from XXXX to XXX the rotations are well represented where as in XXX to XXX there is no meaning encoded.
+Additionally we interpolated in the $z_{\trans}$ and $z_{\rot}$ space. There it verifies that our assumptions about the unity circle were not correct because it did not show the anticipated behaviour for the rotations which can be observed in figure \ref{square_ipol}.
 The interpolations in $z_{\trans}$ can be seen in figure \ref{square_ipol} and behave as anticipated by representing the translations where the scaling or depth translation is entangled with all 3 dimensions of $z_{\trans}$. A possible explanation for this is that the learned representation is a coordinate system with a linear transformation of the real coordinates.\\  
 \begin{figure}[!ht]
 \centering
@@ -234,36 +234,91 @@ The interpolations in $z_{\trans}$ can be seen in figure \ref{square_ipol} and b
 	\caption{}
 	\label{fig1:subim4}
 \end{subfigure}
-\caption{Interpolations: (a) in $\alpha \in (0, 2 \pi)$ with $z_{\rot}= (cos(\alpha), sin(\alpha))^T$\\
-(b), (c) and (d) linear interpolations from XXX to XXX in $z_{\trans_{1/2/3}}$ with other dimensions set to 0.\\
-In figure (a) the interpolations from xx to xx do not resemble a square which in a certain orientation due to this we conclude that the rotations are not defined on the unity circle in but just on a part of it from xx to xx.\\
+\caption{Interpolations: (a) in $\alpha \in (\pi /2, 3/2 \pi)$ with $z_{\rot}= (cos(\alpha), sin(\alpha))^T$\\
+(b), (c) and (d) linear interpolations from 0 to 2 in $z_{\trans_{1/2/3}}$ with other dimensions set to 0.\\
 All 3 dimensions seem to represent the translation in the $z$ axis and a different mixture of $x$ and $y$ axis which appears to be linearly separable according to (b), (c) and (d).} \label{square_ipol}
 \end{figure}
 \newpage
 \subsection{3D Cube}\label{Cube}
-In this experiment we wanted to expand our predictions to a more complex case by taking the next complex object from the 2D square in 3D, namely the 3D cube. the 3D cube can be rotated in 2 axes due to trivial reasons of symmetry which leads to the conclusion that the rotations should be able to be represented by a hyper-sphere in 3 dimensions. So $z_{\rot}$ was chosen to be element of $\mathbb{R}^3$. The correlations between $z_{\rot}$ and the rotations as well as $z_{\trans}$ and the translation can be seen in figure XXXXXXXX.
-Due to the more complex nature of the correlations in this case we also used the codebook created with our fully trained model to show the capabilty of this architecture. The resulting errors can be seen in table XXXXXXXXXXXX.
-\begin{tabular}{l*{6}{c}r}
-Team              & P & W & D & L & F  & A & Pts \\
-\hline
-Manchester United & 6 & 4 & 0 & 2 & 10 & 5 & 12  \\
-Celtic            & 6 & 3 & 0 & 3 &  8 & 9 &  9  \\
-Benfica           & 6 & 2 & 1 & 3 &  7 & 8 &  7  \\
-FC Copenhagen     & 6 & 2 & 1 & 3 &  5 & 8 &  7  \\
-\end{tabular}
+In this experiment we wanted to expand our predictions to a more complex case by taking the next complex object from the 2D square in 3D, namely the 3D cube. the 3D cube gets rotated in 2 axes due to trivial reasons of symmetry which leads to the conclusion that the rotations should be able to be represented by a hyper-sphere in 4 dimensions. So $z_{\rot}$ was chosen to be element of $\mathbb{R}^4$. The correlations between $z_{\rot}$ can be seen in figure \ref{cube_corr_rot}. \\
+The correlations for the translation, which can be seen in figure \ref{cube_corr_trans}, also lead to the conclusion of $z_{\trans}$ being a linear transformation of the translations. 
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}{0.49\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cube_rot_phi_z_all.pdf}
+	\caption{}
+	\label{fig_rotph_all}
+\end{subfigure}
+\begin{subfigure}{0.49\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cube_rot_theta_z_all.pdf}
+	\caption{}
+	\label{fig_rotth_all}
+\end{subfigure}
+\caption{Correlation plots of the rotation $\theta$ as well as $\phi$ and the dimensions of $z_{\rot}$.\\
+The different dimensions are differently colored and show clear periodic behaviour.} \label{cube_corr_rot}
+\end{figure}
+
+
 \newpage
 \subsection{Line Mod}
 Our final experiments were conducted on the LINE MOD created by Stefan Hinterstoisser \cite{LINEMOD} to evaluate the capability of the 6D Pose AE on two very different objects. Namely the cat and the egg-box where the model should show that it can be used on cases with no symmetry like the cat as well as many symmetries such as the egg-box in general cases with all 3 rotations and thereby the resulting latent space representations $z_{\rot} \in \mathbb{R}^4$. Ideally the resulting model can be used to determine the 3 rotation values as well as to be able to detect rotation symmetries like in the egg box by itself making it very robust against ambiguities. 
 \subsubsection{Cat}
 As mentioned before the cat object of the line mod dataset has no symmetries which makes it a good proof of concept to show that the 3 rotations can be displayed by the network on the unity sphere in $\mathbb{R}^4$ which makes it a generalization of the quaternions $\mathbb{Q}$. Also this allows us to test whether this assumption really fits by calculating the resulting $i, j \text{ and } k$ of two rotations and applying (multiplicating) them onto each other. The resulting quaternion is then compared with the quaternion which we get by computing the quaternion we get from the network predicted.
-\begin{tabular}{l*{6}{c}r}
-Team              & P & W & D & L & F  & A & Pts \\
-\hline
-Manchester United & 6 & 4 & 0 & 2 & 10 & 5 & 12  \\
-Celtic            & 6 & 3 & 0 & 3 &  8 & 9 &  9  \\
-Benfica           & 6 & 2 & 1 & 3 &  7 & 8 &  7  \\
-FC Copenhagen     & 6 & 2 & 1 & 3 &  5 & 8 &  7  \\
-\end{tabular}
+
+The reconstructions of this object with $z_{\rot}$ being 4 dimensional were not satisfying which is why decided to also train a model with $z_{\rot}$ being 64 dimensional. Both reconstructions can be seen in figure \ref{cat_images}. The vsd errors for both of these models where: XXXXXXXXXX
+
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}{\textwidth}
+	\centering
+	\includegraphics[width=0.49\textwidth] {cat_input.png}
+	\caption{Input}
+	\label{cat_in}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cat_target0.png}
+	\caption{Rotation target}
+	\label{cat_r}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cat_4_output0.png}
+	\caption{Rotation Model 1}
+	\label{cat_rrec}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cat_64_output0.png}
+	\caption{Rotation Model 2}
+	\label{cat_rrec2}
+\end{subfigure}
+
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cat_target1.png}
+	\caption{Translation target}
+	\label{cube_t}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cat_4_output1.png}
+	\caption{Translation Model 1}
+	\label{cube_trec}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cat_64_output1.png}
+	\caption{Translation Model 2}
+	\label{cube_trec1}
+\end{subfigure}
+\caption{Comparision between reconstructions and targets for the two AAEs. 
+Dimensions of $z_{\rot}$: 4 for Model 1 and 64 for Model 2.\\
+The reconstructions of Model 2 show much more detail and are less ambiguous regarding to the reconstructed rotation than the reconstructions of Model 1.} \label{cat_images}
+\end{figure}
+
 
 \subsubsection{Egg Box}
 The Egg Box has many symmetries and the ideal case is that the network learns these symmetries by changing the frequencies of the latent space repetitions in $z_{\rot}$
@@ -282,6 +337,7 @@ It is also easily able to detect on which object the network is basing its predi
 \section{Sources}\label{Sources}
 \printbibliography
 
+\newpage
 \section{Appendix}
 \begin{figure}
 \center
@@ -290,7 +346,6 @@ It is also easily able to detect on which object the network is basing its predi
 Left: squares from the distributions (a,b,c and d) with different translations in x,y and z axis used for training and testing\\
 Right: Normalized latent dimensions $z_{\rot_1}$ and $z_{\rot_2}$ for the rotations of the distributions from (a-d). (1-2) are from normal AEs whereas (3) is from the AAE.}\label{SQUARE_Martin}
 \end{figure}
-
 
 
 \begin{figure}[!ht]
@@ -386,12 +441,109 @@ Right: Normalized latent dimensions $z_{\rot_1}$ and $z_{\rot_2}$ for the rotati
 	\caption{}
 	\label{fig_zz2}
 \end{subfigure}
-\caption{Correlation plots of the translations $x,y$ and z and the dimensions of $z_{\rot}$.\\
+\caption{Correlation plots of the translations $x,y$ and $z$ and the dimensions of $z_{\rot}$ for the square.\\
 The rows represent the translations in axes x,y and z e.g. (a-c) for x\\
 The colums represent the $z_{\rot_i}$ e.g. (a), (d) and (g) for $z_{\rot_1}$} \label{Square_corr_trans}
 \end{figure}
 
 
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}{\textwidth}
+	\centering
+	\includegraphics[width=0.49\textwidth] {cube_input.png}
+	\caption{Input}
+	\label{cube_in}
+\end{subfigure}
+\begin{subfigure}{0.49\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cube_output0.png}
+	\caption{Translation reconstr.}
+	\label{cube_trec}
+\end{subfigure}
+\begin{subfigure}{0.49\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cube_output1.png}
+	\caption{Rotation reconstr.}
+	\label{cube_rrec}
+\end{subfigure}
+\begin{subfigure}{0.49\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cube_target0.png}
+	\caption{Translation target}
+	\label{cube_tt}
+\end{subfigure}
+\begin{subfigure}{0.49\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cube_target1.png}
+	\caption{Rotation target}
+	\label{cube_rt}
+\end{subfigure}
+\caption{} \label{cube_images}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cube_trans_x_z0.pdf}
+	\caption{}
+	\label{cfig_xzo}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cube_trans_x_z0.pdf}
+	\caption{}
+	\label{cfig_xz1}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cube_trans_x_z0.pdf}
+	\caption{}
+	\label{cfig_xz2}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cube_trans_y_z1.pdf}
+	\caption{}
+	\label{cfig_yz0}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cube_trans_y_z1.pdf}
+	\caption{}
+	\label{cfig_yz1}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cube_trans_y_z1.pdf}
+	\caption{}
+	\label{cfig_yz2}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {cube_trans_z_z2.pdf}
+	\caption{}
+	\label{cfig_zzo}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cube_trans_z_z2.pdf}
+	\caption{}
+	\label{cfig_zz1}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{cube_trans_z_z2.pdf}
+	\caption{}
+	\label{cfig_zz2}
+\end{subfigure}
+\caption{Correlation plots of the translations $x,y$ and $z$ and the dimensions of $z_{\rot}$ for the cube.\\
+The rows represent the translations in axes x,y and z e.g. (a-c) for x\\
+The colums represent the $z_{\rot_i}$ e.g. (a), (d) and (g) for $z_{\rot_1}$} \label{cube_corr_trans}
+\end{figure}
 
 
 \end{document}
