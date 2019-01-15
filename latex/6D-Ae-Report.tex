@@ -145,7 +145,7 @@ Rotations with three axes can be represented in a similar manner as hyper sphere
 L_{\text{lat}}(z) = z_{\trans}^2
 \end{aligned}
 \end{equation}
-Translations are often also easier to learn and disentangle for a neural network, traditional autoencoders on mnist for example often have translations as single latent dimensions. A fact that need to be taken into consideration with this method is that the $z$ or depth axis could also be parametrized by scale so for objects with similar shape but different scales there would also be some ambiguities.
+Translations are often also easier to learn and disentangle for a neural network, traditional autoencoders on mnist for example often have translations as single latent dimensions. A fact that needs to be taken into consideration with this method is that the $z$ or depth axis could also be parametrized by scale so for objects with similar shape but different scales there would also be some ambiguities.
 
 \newpage
 \subsection{Codebook}\label{Codebook}
@@ -169,7 +169,7 @@ For the translation the euclidean distance was chosen as distance metric to dete
 \newpage
 \section{Evalutation}\label{Evaluation}
 In the following section we present our results as well as the methods used to investigate the behaviour of the 6D-AE and to verify the assumptions made in the chapter methods \ref{Methods}.\\
-The metric we used to determine the quality of our model is the Visible Surface Discrepancy Metric designed by Hodan et al. 
+The metric we used to determine the quality of our model is the Visible Surface Discrepancy Metric. It is an ambiguity-invariant pose error function that is determined by the distance between the estimated and ground truth visible object depth surfaces. Because for our model always the complete object is visible the depth surfaces are of no importance for our model. 
 \subsection{2D Square in 3D Space}\label{Square}
 In this experiment we focused on reproducing the qualitative results of the Augmented Autoencoder which can be seen in figure \ref{SQUARE_Martin} and disentangling the latent space representation of the translation and rotation with the training scheme represented in the chapter \ref{6D Pose Autoencoder}. The resulting reconstructions allow conclusion on the orientation of the square and only contain either translation or rotation. They can be seen in figure \ref{square_images} in the appendix.\\
 $z_{\rot}$ was defined to be in in $\mathbb{R}^2$ representing $\mathbb{C}$ as described in chapter \ref{Methods} due to the single rotation axis of the object. Due to the two perpendicular axes of symmetry the square posses we anticipated to see a shifted and cosine function with the frequency $f = 2/ \pi$, because the square appears exactly the same after a rotation of $\dfrac{\pi}{2}i$. \\
@@ -192,31 +192,6 @@ The plot for $\theta$ shows a periodic behaviour with the correct correct freque
 \caption{Correlation plots of the rotation $\theta$ and the dimensions of $z_{\rot}$.\\
 The values show a period of $\pi/2$ representing the symmetries of the square even though they do not show the anticipated behaviour of being cosine and sine.} \label{Square_corr_rot}
 \end{figure}
-In table \ref{square_results} it can be observed that the rotations and translations behave differently with the parameter $k$ of the codebook prediction. The prediction of the translation gets worse with increasing $k$ even though due to the weighted $kNN$ prediction. Whereas the predicted orientation of $\theta$ gets better with increasing $k$ but the best metric for the $kNN$ prediction is not the cosine as supposed but the euclidean similarity metric.
-
-\begin{table}
-    \begin{adjustbox}{width=\textwidth}
-        \begin{tabular}[width = \textwidth]{lccccccccc} 
-    Metric & \multicolumn{6}{c}{RMSE} & mean vsd & recall & mean cosine \\
-           &&&&&&&&& similarity \\
-    \hline
-    Parameter & $\theta$ & $\phi$ & $\gamma$ & $x_{\text{ax}}$  &
-    $y_{\text{ax}}$ & $z_{\text{ax}}$ &       &      & angles\\
-\hline
-Square        & 0.73     &        &          & 0.04             & 0.04            & 0.20            & 0.06  & 1.00 & 1.00 \\
-CUBE 4        & 14.10    & 12.80  &          & 0.06             & 0.06
-              & 0.19     & 0.12   & 0.99     & 0.96            \\
-CUBE 64       & 7.27    & 6.15  &          & 0.05             & 0.05
-              & 0.16     & 0.10   & 0.99     & 0.97            \\
-CAT 4         & 107.07   & 77.48  & 105.04   & 0.12             & 0.13
-              & 0.34     & 0.54 & 0.03 & 0.51    \\
-CAT 64        & 112.51   & 75.27  & 111.50   & 0.13             & 0.13
-              & 0.31     & 0.51 & 0.08 & 0.53    \\
-\end{tabular}
-\end{adjustbox}
-\caption{Evaluation metrics for the different datasets}
-\label{square_results}
-\end{table}
 
 Additionally we interpolated in the $z_{\trans}$ and $z_{\rot}$ space. There it verifies that our assumptions about the unity circle were not correct because it did not show the anticipated behaviour for the rotations which can be observed in figure \ref{square_ipol}.
 The interpolations in $z_{\trans}$ can be seen in figure \ref{square_ipol} and behave as anticipated by representing the translations where the scaling or depth translation is entangled with all 3 dimensions of $z_{\trans}$. A possible explanation for this is that the learned representation is a coordinate system with a linear transformation of the real coordinates.\\  
@@ -254,6 +229,7 @@ All 3 dimensions seem to represent the translation in the $z$ axis and a differe
 \subsection{3D Cube}\label{Cube}
 In this experiment we wanted to expand our predictions to a more complex case by taking the next complex object from the 2D square in 3D, namely the 3D cube. the 3D cube gets rotated in 2 axes due to trivial reasons of symmetry which leads to the conclusion that the rotations should be able to be represented by a hyper-sphere in 4 dimensions. So $z_{\rot}$ was chosen to be element of $\mathbb{R}^4$. The correlations between $z_{\rot}$ can be seen in figure \ref{cube_corr_rot}. \\
 The correlations for the translation, which can be seen in figure \ref{cube_corr_trans}, also lead to the conclusion of $z_{\trans}$ being a linear transformation of the translations. 
+We also trained a model with $64$ rotational latent space dimensions for the cube to see how the accuracy of the predicted rotations behaves for increasing dimensions.
 \begin{figure}[!ht]
 \centering
 \begin{subfigure}{0.49\textwidth}
@@ -280,11 +256,6 @@ The cat is a much more complex object than the cube with no symmetries and more 
 The lack of any symmetries would be a powerful way to prove that the 3 Euler rotations can be represented by the unity sphere in $\mathbb{R}^4$, a generalization of the quaternions $\mathbb{Q}$.\\
 Because the reconstructions of this the AAE with $z_{\rot}$ being 4 dimensional were not satisfying which is why decided to also train a model with $z_{\rot}$ being 64 dimensional. The reconstructions of both models can be seen in figure \ref{cat_images} where the reconstructions of the model with 4 latent rotational dimensions has washed out reconstruction with ambiguous rotations, where head and body cannot clearly be separated. \\
 Also we could not find any correlations in the rotational latent space to any euler angle for Model 1. Due to the big latent space we did not even attempt to find correlations by hand for Model 2. Our only way to verify the quality of the latent space thereby is the prediction of the correct pose via the codebook for Model 2 and also Model 1. \\
-
-
-
-
- Both reconstructions can be seen in figure \ref{cat_images}. The vsd errors for both of these models where: XXXXXXXXXX
 
 \begin{figure}[!ht]
 \centering
@@ -338,15 +309,36 @@ The reconstructions of Model 2 show much more detail and are less ambiguous rega
 
 \newpage
 \section{Conclusion}
-
-
-The general concept of this work namely the split in rotational latent space $z_{\rot}$ and translational latent space $z_{\trans}$ of the augmented autoencoder was shown to work  extremely well by restricting the size of the latent space in experiments A TO B.\\
-We were able to extract the 3D orientation as well as the 3D rotation with regard to the camera of the object with the codebook.\\
-\\
-The connection between $N$-dimensional rotations and the $N-1$-dimensional unity sphere was shown to be appropriate and used to minimize the size of the latent space in the experiment SQUARE and CAT\\
-\\
-In general this model thereby allows a more accurate estimation of the 3D translation than the model presented by martin sundermeier et. al. .
-It is also easily able to detect on which object the network is basing its prediction of the codebook by checking the translation reconstruction in case of misspredictions or multiple objects of the same class.\\
+The final results of of the VSD metric can be seen here in figure \ref{results}. These results show that for the easy objects with a lot of symmetries a small latent space is sufficient to represent the rotations. Whereas for the more complex shape a bigger latent space leads to a significant improvement of the predicted rotations.
+This is backed up by the fact that the improvement to a bigger latent space for the cube dataset is negligible compared to the improvement for the cat dataset.\\
+As expected the split of translation and rotation was successful which can be seen in the small rMSE for the translations. Also due to the clear correlations we conclude that the latent space could be described by a linear transformation of the translations. It is important to note here that the dimensions of the latent space for translations is 3 for all models here.\\
+\begin{table}
+    \begin{adjustbox}{width=\textwidth}
+        \begin{tabular}[width = \textwidth]{lccccccccc} 
+    Metric & \multicolumn{6}{c}{RMSE} & mean vsd & recall & mean cosine \\
+           &&&&&&&&& similarity \\
+    \hline
+    Parameter & $\theta$ & $\phi$ & $\gamma$ & $x_{\text{ax}}$  &
+    $y_{\text{ax}}$ & $z_{\text{ax}}$ &       &      & angles\\
+\hline
+Square        & 0.73     &        &          & 0.04             & 0.04            & 0.20            & 0.06  & 1.00 & 1.00 \\
+CUBE 4        & 14.10    & 12.80  &          & 0.06             & 0.06
+              & 0.19     & 0.12   & 0.99     & 0.96            \\
+CUBE 64       & 7.27    & 6.15  &          & 0.05             & 0.05
+              & 0.16     & 0.10   & 0.99     & 0.97            \\
+CAT 4         & 107.07   & 77.48  & 105.04   & 0.12             & 0.13
+              & 0.34     & 0.54 & 0.03 & 0.51    \\
+CAT 64        & 112.51   & 75.27  & 111.50   & 0.13             & 0.13
+              & 0.31     & 0.51 & 0.08 & 0.53    \\
+\end{tabular}
+\end{adjustbox}
+\caption{Evaluation metrics for the different datasets with a test set of size 1000}
+\label{results}
+\end{table}
+So we were able to extract 3D orientation as well as 3D translation with regard to the camera of the objects with the codebook.
+The connection between $N$-dimensional rotations and the $N-1$-dimensional unity sphere could not be shown in this research project. But with a more powerful loss and a method to ensure that the model uses the complete unity sphere this could be a very powerful property.\\
+We were also not able to verify the high accuracy of the AAE for pose predictions as presented by Martin Sundermeier et al. \cite{3D_Orientation_Learning}, but it is possible that we did not spend enough time to tune the hyperparameters of the model.\\
+The general purpose of the project was achieved by showing that the translation of the object can be easily separated into a certain part of the latent space with a high correlation to the real translation.
 
  
 \newpage
