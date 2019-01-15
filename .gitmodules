@@ -1,0 +1,3 @@
+[submodule "sixd_toolkit"]
+	path = sixd_toolkit
+	url = git@github.com:tbung/sixd_toolkit.git

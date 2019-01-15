@@ -8,6 +8,7 @@ import fire
 import tqdm
 import logging
 import trimesh
+np.set_printoptions(threshold=np.inf)
 
 log = logging.getLogger('glumpy')
 log.setLevel(logging.WARNING)
@@ -19,7 +20,7 @@ def load_ply(name):
     vtype = [('a_position', np.float32, 3), ('a_texcoord', np.float32, 2),
              ('a_normal',   np.float32, 3), ('a_color',    np.float32, 4)]
 
-    mesh = trimesh.load(f"./{name}/mesh.ply")
+    mesh = trimesh.load(f"./data/{name}/mesh.ply")
     vertices = np.zeros(mesh.vertices.shape[0], dtype=vtype)
     vertices['a_position'] = mesh.vertices - mesh.center_mass
     vertices['a_position'] /= np.abs(vertices['a_position']).max()
@@ -276,6 +277,126 @@ def render(shape, n_samples, imgsize, fixed_z=True,
     #print(gt)
     np.savetxt(root / 'target.txt', gt, delimiter='\t', fmt='%s')
     pbar.close()
+
+
+def render_depth(shape, imgsize, R, t):
+    root = Path(shape)
+    root.mkdir(exist_ok=True)
+
+    vertex = """
+    uniform mat4   u_model;         // Model matrix
+    uniform mat4   u_view;          // View matrix
+    uniform mat4   u_projection;    // Projection matrix
+    attribute vec4 a_color;         // Vertex color
+    attribute vec3 a_position;      // Vertex position
+    varying float v_eye_depth;
+
+    void main() {
+    gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
+    vec3 v_eye_pos = (u_view * u_model * vec4(a_position, 1.0)).xyz; // Vertex position in eye coords.
+
+    // OpenGL Z axis goes out of the screen, so depths are negative
+    v_eye_depth = -v_eye_pos.z;
+    }
+    """
+
+    # Depth fragment shader
+    fragment = """
+    varying float v_eye_depth;
+
+    void main() {
+    gl_FragColor = vec4(v_eye_depth, v_eye_depth, v_eye_depth, 1.0);
+    }
+    """
+
+    window = app.Window(width=imgsize, height=imgsize, visible=False,
+                        color=(0.0, 0.0, 0.0, 1.00))
+    depthbuffer = np.zeros((window.height, window.width * 3),
+                           dtype=np.float32)
+
+    if shape == 'cube':
+        V, I, _ = create_cube()
+        cube = gloo.Program(vertex, fragment)
+        cube.bind(V)
+    elif shape == 'square':
+        V, I, _ = create_square()
+        cube = gloo.Program(vertex, fragment)
+        cube.bind(V)
+    elif shape in shapes:
+        V, I, _ = load_ply(shape)
+        cube = gloo.Program(vertex, fragment)
+        cube.bind(V)
+
+    cube['u_model'] = np.eye(4, dtype=np.float32)
+    cube['u_view'] = glm.translation(0, 0, -7)
+
+    depth = None
+
+    @window.event
+    def on_draw(dt):
+        nonlocal depth
+        color_buf = np.zeros((imgsize, imgsize, 4), np.float32).view(gloo.TextureFloat2D)
+        depth_buf = np.zeros((imgsize, imgsize), np.float32).view(gloo.DepthTexture)
+        fbo = gloo.FrameBuffer(color=color_buf, depth=depth_buf)
+        fbo.activate()
+
+        window.clear()
+
+        # Fill cube
+        gl.glDisable(gl.GL_BLEND)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
+        gl.glClearColor(0.0, 0.0, 0.0, 0.0)
+
+        # Rotate cube
+        model = np.eye(4, dtype=np.float32)
+
+        R_ = np.eye(4)
+        R_[:3, :3] = R
+
+        model = R_ @ model
+
+        # Translate cube
+        glm.translate(model, *t[0])
+
+        cube['u_model'] = model
+        # cube['u_normal'] = np.array(np.matrix(np.dot(view, model)).I.T)
+
+        cube.draw(gl.GL_TRIANGLES, I)
+        # depth = np.zeros((shape[0], shape[1], 4), dtype=np.float32)
+        # gl.glReadPixels(0, 0, shape[1], shape[0], gl.GL_RGBA, gl.GL_FLOAT, depth)
+        # depth.shape = shape[0], shape[1], 4
+        # depth = depth[::-1, :]
+        # depth = depth[:, :, 0] # Depth is saved in the first channel
+
+
+
+        # Export screenshot
+        gl.glReadPixels(0, 0, window.width,
+                        window.height, gl.GL_RGB,
+                        gl.GL_FLOAT, depthbuffer)
+        # print(depthbuffer[depthbuffer != 0])
+        # png.from_array(np.floor((depthbuffer - 0) / depthbuffer.max() * 255).astype(np.uint8),
+        #                'RGB').save(root / 'images' /
+        #                            'depth.png')
+
+        fbo.deactivate()
+        depth = depthbuffer.reshape((3, 128, 128))[0]
+
+    @window.event
+    def on_resize(width, height):
+        cube['u_projection'] = glm.perspective(45.0,
+                                               width / float(height),
+                                               .1, 100.0)
+
+    @window.event
+    def on_init():
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glPolygonOffset(1, 1)
+        gl.glEnable(gl.GL_LINE_SMOOTH)
+
+    app.run(framecount=1, framerate=0)
+    return depth
 
 
 if __name__ == '__main__':
