@@ -5,6 +5,7 @@ from glumpy import app, gl, glm, gloo
 from glumpy.ext import png
 from pathlib import Path
 import fire
+import time
 import tqdm
 import logging
 import trimesh
@@ -272,9 +273,7 @@ def render(shape, n_samples, imgsize, fixed_z=True,
         gl.glEnable(gl.GL_LINE_SMOOTH)
 
     app.run(framecount=n_samples*3 + 2, framerate=0)
-    #print(gt)
     gt = np.array(gt)
-    #print(gt)
     np.savetxt(root / 'target.txt', gt, delimiter='\t', fmt='%s')
     pbar.close()
 
@@ -375,13 +374,14 @@ def render_depth(shape, imgsize, R, t):
         gl.glReadPixels(0, 0, window.width,
                         window.height, gl.GL_RGB,
                         gl.GL_FLOAT, depthbuffer)
-        # print(depthbuffer[depthbuffer != 0])
+
         # png.from_array(np.floor((depthbuffer - 0) / depthbuffer.max() * 255).astype(np.uint8),
-        #                'RGB').save(root / 'images' /
-        #                            'depth.png')
+        #                'RGB').save('./images' +
+        #                            f'depth{time.time()}.png')
 
         fbo.deactivate()
-        depth = depthbuffer.reshape((3, 128, 128))[0]
+        fbo.delete()
+        depth = depthbuffer.reshape((128, 128, 3))[::-1, :, 0]
 
     @window.event
     def on_resize(width, height):
@@ -396,6 +396,7 @@ def render_depth(shape, imgsize, R, t):
         gl.glEnable(gl.GL_LINE_SMOOTH)
 
     app.run(framecount=1, framerate=0)
+    window.close()
     return depth
 
 
