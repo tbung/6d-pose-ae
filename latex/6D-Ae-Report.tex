@@ -1,6 +1,7 @@
 \documentclass[10pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
+\usepackage{adjustbox}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
@@ -192,20 +193,31 @@ The plot for $\theta$ shows a periodic behaviour with the correct correct freque
 The values show a period of $\pi/2$ representing the symmetries of the square even though they do not show the anticipated behaviour of being cosine and sine.} \label{Square_corr_rot}
 \end{figure}
 In table \ref{square_results} it can be observed that the rotations and translations behave differently with the parameter $k$ of the codebook prediction. The prediction of the translation gets worse with increasing $k$ even though due to the weighted $kNN$ prediction. Whereas the predicted orientation of $\theta$ gets better with increasing $k$ but the best metric for the $kNN$ prediction is not the cosine as supposed but the euclidean similarity metric.
+
 \begin{table}
-\begin{tabular}[width = \textwidth]{l*{6}{c}r} 
-Parameter              &  & $\theta$ &  & L & $x_{\text{ax}}$  & $y_{\text{ax}}$ & $z_{\text{ax}}$ \\
+    \begin{adjustbox}{width=\textwidth}
+        \begin{tabular}[width = \textwidth]{lccccccccc} 
+    Metric & \multicolumn{6}{c}{RMSE} & mean vsd & recall & mean cosine \\
+           &&&&&&&&& similarity \\
+    \hline
+    Parameter & $\theta$ & $\phi$ & $\gamma$ & $x_{\text{ax}}$  &
+    $y_{\text{ax}}$ & $z_{\text{ax}}$ &       &      & angles\\
 \hline
-Metric &  rMSE& $\cos(q(\theta), q(\hat{\theta}))$ & $\text{vsd}_{\text{err}}$ &  & rMSE  & rMSE & rMSE \\
-\hline
-Square & 6 & 4 & 0 & 2 & 10 & 5 & 12  \\
-CUBE            & 6 & 3 & 0 & 3 &  8 & 9 &  9  \\
-Eggbox           & 6 & 2 & 1 & 3 &  7 & 8 &  7  \\
-CAT     & 6 & 2 & 1 & 3 &  5 & 8 &  7  \\
+Square        & 0.73     &        &          & 0.04             & 0.04            & 0.20            & 0.06  & 1.00 & 1.00 \\
+CUBE 4        & 14.10    & 12.80  &          & 0.06             & 0.06
+              & 0.19     & 0.12   & 0.99     & 0.96            \\
+CUBE 64       & 7.27    & 6.15  &          & 0.05             & 0.05
+              & 0.16     & 0.10   & 0.99     & 0.97            \\
+CAT 4         & 107.07   & 77.48  & 105.04   & 0.12             & 0.13
+              & 0.34     & 0.54 & 0.03 & 0.51    \\
+CAT 64        & 112.51   & 75.27  & 111.50   & 0.13             & 0.13
+              & 0.31     & 0.51 & 0.08 & 0.53    \\
 \end{tabular}
-\caption{Resulting predicted values by using the codebook with distinct similarity metrics and $K$ for the kNN prediction.}
+\end{adjustbox}
+\caption{Evaluation metrics for the different datasets}
 \label{square_results}
 \end{table}
+
 Additionally we interpolated in the $z_{\trans}$ and $z_{\rot}$ space. There it verifies that our assumptions about the unity circle were not correct because it did not show the anticipated behaviour for the rotations which can be observed in figure \ref{square_ipol}.
 The interpolations in $z_{\trans}$ can be seen in figure \ref{square_ipol} and behave as anticipated by representing the translations where the scaling or depth translation is entangled with all 3 dimensions of $z_{\trans}$. A possible explanation for this is that the learned representation is a coordinate system with a linear transformation of the real coordinates.\\  
 \begin{figure}[!ht]
