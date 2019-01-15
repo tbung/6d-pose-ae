@@ -5,6 +5,8 @@ from data_loader import get_loader
 from utils import Codebook, symmetries, symmetries_diff, eulerAnglesToRotationMatrix
 import argparse
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import utils
 import numpy as np
 import trimesh
 
@@ -96,11 +98,25 @@ if __name__ == "__main__":
                              trans_.cpu()))
         all_pose_gt.append((eulerAnglesToRotationMatrix(rot[0]),
                             trans.cpu()))
+        cos_sim_mean = torch.zero(1)
+        cos_sim_std = torch.zero(1)
+
         with torch.no_grad():
             abs_diff = symmetries_diff(rot, rot_, object_type=args.dataset)
             print(abs_diff.max())
             MSE_trans += ((trans-trans_)**2).mean(dim=0)/length
             MSE_rot += ((abs_diff)**2).mean(dim=0)/length
 
+            cos_sim = utils.quaternion_distance(rot, rot_)
+            cos_sim_mean += cos_sim.mean()/length
+            cos_sim_std += cos_sim.std()/length
+            
+
     print(torch.sqrt(MSE_trans))
     print(torch.sqrt(MSE_rot))
+    print(cos_sim_mean)
+    print(cos_sim_std)
+
+
+plt.scatter(codebook.z_rot[:, 0].cpu().numpy(), codebook.rot[:, 0].cpu().numpy())
+plt.show()

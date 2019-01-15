@@ -111,11 +111,10 @@ $f$ can be any arbitrary augmentation or just the identity.
 
 \subsection{6D Pose Autoencoder}\label{6D Pose Autoencoder}
 \begin{figure}[htb]
- \label{model_square}
     \centering
     \input{./fig_model.tex}
     \caption{Schematic of the model training schedule and its functionality from left to the right by mapping the input through the encoder to $z_{\trans}$ denoted as $z_1$ and $z_{\rot}$ denoted as $z_2$ through their respective decoders leading to two different reconstructions only preserving location or rotation of the object. These then are compared with the bootstrapped $L_2$-Loss for the reconstruction loss.\\
-    As can be observed in this figure the training schedule leads to the expected results for the squares dataset.}
+    As can be observed in this figure the training schedule leads to the expected results for the squares dataset.} \label{model_square}
 \end{figure}
 The motivation of the 6D-Pose-Autoencoder is to get two latent space $z_{\rot}$ and $z_{\trans}$ from which the 6D pose comprised of rotation and translation can be read out separately.
 Therefore $z_{\rot}$ encodes the orientation and should be invariant against translation while $z_{\trans}$ encodes the translation while being invariant for rotations. This is done by taking two separate Augmented Autoencoder, one for the translation and one for the rotation. They receive the same input but are trained to reconstruct differently augmented versions of the input $x_{\rot}$ and $x_{\trans}$ . The training schedule is inspired by \textbf{Hypothesis 1}.
@@ -169,11 +168,14 @@ For the translation the euclidean distance was chosen as distance metric to dete
 
 \newpage
 \section{Evalutation}\label{Evaluation}
-In the following section we present our results to prove our concepts presented in the chapter methods \ref{Methods}.
-XXXXXXXXXXXXXXXXXXXXXX
+In the following section we present our results as well as the methods used to investigate the behaviour of the 6D-AE and to verify the assumptions made in the chapter methods \ref{Methods}.
 \subsection{2D Square in 3D Space}\label{Square}
+In this experiment we focused on reproducing the qualitative results of the Augmented Autoencoder 
 The goal of this experiment was to reproduce the qualitative result of Martin Sundermayer et al. \cite{3D_Orientation_Learning} with the AAE and show that the rotation and translation can be disentangled in principle with this training schedule. $z_{\rot}$ was defined to be in in $\mathbb{R}^2$ representing $\mathbb{C}$ as described in chapter \ref{Methods} due to the single rotation axis of the object. Due to the two perpendicular axes of symmetry the square posses we should see a shifted and cosine function with the frequency $f = \dfrac{4}{2 \pi}$, because the square appears exactly the same after a rotation of $\dfrac{\pi}{2}i$. \\
 The second part was to show that the translation could be extracted from the latent space representation $z_{\trans}$ and that different rotations have neglegible effect on it. The resulting plot for the correlation between $z_{\rot}$ and the rotation $\varphi$ as well as $z_{\trans}$ and the translation can be seen in figure XXXXXXXX.
+\begin{figure}
+\includegraphics[width = \linewidth]{MARTIN_Squares.png}
+\end{figure}
 \begin{tabular}{l*{6}{c}r}
 Team              & P & W & D & L & F  & A & Pts \\
 \hline
@@ -224,6 +226,12 @@ It is also easily able to detect on which object the network is basing its predi
 \newpage
 \section{Sources}\label{Sources}
 \printbibliography
+
+\section{Appendix}
+\begin{figure}
+\includegraphics[width = \linewidth]{MARTIN_Squares.png}
+\caption{Left: squares from the distributions (a,b,c and d) with different translations in x,y and z axis used for training and testing}
+\end{figure}
 
 
 
