@@ -170,7 +170,7 @@ For the translation the euclidean distance was chosen as distance metric to dete
 \section{Evalutation}\label{Evaluation}
 In the following section we present our results as well as the methods used to investigate the behaviour of the 6D-AE and to verify the assumptions made in the chapter methods \ref{Methods}.
 \subsection{2D Square in 3D Space}\label{Square}
-In this experiment we focused on reproducing the qualitative results of the Augmented Autoencoder which can be seen in figure \ref{SQUARE_Martin} and disentangling the latent space representation of the translation and rotation with the training scheme represented in the chapter \ref{6D Pose Autoencoder}. The resulting reconstructions allow conclusion on the orientation of the square and only contain either translation or rotation. They can be seen in figure \ref{Sqaure_req} in the appendix.\\
+In this experiment we focused on reproducing the qualitative results of the Augmented Autoencoder which can be seen in figure \ref{SQUARE_Martin} and disentangling the latent space representation of the translation and rotation with the training scheme represented in the chapter \ref{6D Pose Autoencoder}. The resulting reconstructions allow conclusion on the orientation of the square and only contain either translation or rotation. They can be seen in figure \ref{square_images} in the appendix.\\
 $z_{\rot}$ was defined to be in in $\mathbb{R}^2$ representing $\mathbb{C}$ as described in chapter \ref{Methods} due to the single rotation axis of the object. Due to the two perpendicular axes of symmetry the square posses we anticipated to see a shifted and cosine function with the frequency $f = 2/ \pi$, because the square appears exactly the same after a rotation of $\dfrac{\pi}{2}i$. \\
 The second part was to show that the translation could be extracted from the latent space representation $z_{\trans}$ and that different rotations have neglegible effect on it. The resulting plot for the correlation between $z_{\rot}$ and the rotation $\varphi$ as well as $z_{\trans}$ and the translation can be seen in figure \ref{Square_corr_rot} and \ref{Square_corr_trans}. 
 The plot for $\theta$ shows a periodic behaviour with the correct correct frequency but not the predicted cosine and sine.
@@ -206,8 +206,8 @@ CAT     & 6 & 2 & 1 & 3 &  5 & 8 &  7  \\
 \caption{Resulting predicted values by using the codebook with distinct similarity metrics and $K$ for the kNN prediction.}
 \label{square_results}
 \end{table}
-Additionally we interpolated in the $z_{\trans}$ and $z_{\rot}$ space. There it verifies that our assumptions about the unity circle were not correct because it did not show the anticipated behaviour for the rotations which can be observed in figure \ref{Square_ipol}, where the interpolations show that in the range from XXXX to XXX the rotations are well represented where as in XXX to XXX there is no meaning encoded.
-The interpolations in $z_{\trans}$ can be seen in figure \ref{Square_ipol} and behave as anticipated by representing the translations where the scaling or depth translation is entangled with all 3 dimensions of $z_{\trans}$. A possible explanation for this is that the learned representation is a coordinate system with a linear transformation of the real coordinates.\\  
+Additionally we interpolated in the $z_{\trans}$ and $z_{\rot}$ space. There it verifies that our assumptions about the unity circle were not correct because it did not show the anticipated behaviour for the rotations which can be observed in figure \ref{square_ipol}, where the interpolations show that in the range from XXXX to XXX the rotations are well represented where as in XXX to XXX there is no meaning encoded.
+The interpolations in $z_{\trans}$ can be seen in figure \ref{square_ipol} and behave as anticipated by representing the translations where the scaling or depth translation is entangled with all 3 dimensions of $z_{\trans}$. A possible explanation for this is that the learned representation is a coordinate system with a linear transformation of the real coordinates.\\  
 \begin{figure}[!ht]
 \centering
 \begin{subfigure}{0.49\textwidth}
@@ -237,7 +237,7 @@ The interpolations in $z_{\trans}$ can be seen in figure \ref{Square_ipol} and b
 \caption{Interpolations: (a) in $\alpha \in (0, 2 \pi)$ with $z_{\rot}= (cos(\alpha), sin(\alpha))^T$\\
 (b), (c) and (d) linear interpolations from XXX to XXX in $z_{\trans_{1/2/3}}$ with other dimensions set to 0.\\
 In figure (a) the interpolations from xx to xx do not resemble a square which in a certain orientation due to this we conclude that the rotations are not defined on the unity circle in but just on a part of it from xx to xx.\\
-All 3 dimensions seem to represent the translation in the $z$ axis and a different mixture of $x$ and $y$ axis which appears to be linearly separable according to (b), (c) and (d).} \label{Square_ipol}
+All 3 dimensions seem to represent the translation in the $z$ axis and a different mixture of $x$ and $y$ axis which appears to be linearly separable according to (b), (c) and (d).} \label{square_ipol}
 \end{figure}
 \newpage
 \subsection{3D Cube}\label{Cube}
@@ -290,6 +290,107 @@ It is also easily able to detect on which object the network is basing its predi
 Left: squares from the distributions (a,b,c and d) with different translations in x,y and z axis used for training and testing\\
 Right: Normalized latent dimensions $z_{\rot_1}$ and $z_{\rot_2}$ for the rotations of the distributions from (a-d). (1-2) are from normal AEs whereas (3) is from the AAE.}\label{SQUARE_Martin}
 \end{figure}
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}{\textwidth}
+	\centering
+	\includegraphics[width=0.49\textwidth] {square_input.png}
+	\caption{Input}
+	\label{sq_in}
+\end{subfigure}
+\begin{subfigure}{0.49\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {square_output0.png}
+	\caption{Translation reconstr.}
+	\label{sq_trec}
+\end{subfigure}
+\begin{subfigure}{0.49\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{square_output1.png}
+	\caption{Rotation reconstr.}
+	\label{sq_rrec}
+\end{subfigure}
+\begin{subfigure}{0.49\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {square_target0.png}
+	\caption{Translation target}
+	\label{sq_tt}
+\end{subfigure}
+\begin{subfigure}{0.49\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{square_target1.png}
+	\caption{Rotation target}
+	\label{sq_rt}
+\end{subfigure}
+\caption{} \label{square_images}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {square_x_z0.pdf}
+	\caption{}
+	\label{fig_xzo}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{square_x_z0.pdf}
+	\caption{}
+	\label{fig_xz1}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {square_x_z0.pdf}
+	\caption{}
+	\label{fig_xz2}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{square_y_z1.pdf}
+	\caption{}
+	\label{fig_yz0}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {square_y_z1.pdf}
+	\caption{}
+	\label{fig_yz1}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{square_y_z1.pdf}
+	\caption{}
+	\label{fig_yz2}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\includegraphics[width=\textwidth] {square_z_z2.pdf}
+	\caption{}
+	\label{fig_zzo}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{square_z_z2.pdf}
+	\caption{}
+	\label{fig_zz1}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+	\centering	
+	\includegraphics[width=\textwidth]{square_z_z2.pdf}
+	\caption{}
+	\label{fig_zz2}
+\end{subfigure}
+\caption{Correlation plots of the translations $x,y$ and z and the dimensions of $z_{\rot}$.\\
+The rows represent the translations in axes x,y and z e.g. (a-c) for x\\
+The colums represent the $z_{\rot_i}$ e.g. (a), (d) and (g) for $z_{\rot_1}$} \label{Square_corr_trans}
+\end{figure}
+
 
 
 
