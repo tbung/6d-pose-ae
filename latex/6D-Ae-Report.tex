@@ -30,50 +30,50 @@ sorting=ynt
 
 
 \begin{document}
-  % Keine Seitenzahlen im Vorspann
-  \pagestyle{empty}
+% Keine Seitenzahlen im Vorspann
+\pagestyle{empty}
 
-  % Titelblatt der Arbeit
-  \begin{titlepage}
-
-
- \begin{center} 
-	{\Large\textbf{ 
-		6D Pose Autoencoder
-	}}
-    \vspace{1cm}
-    
-    Project report Reconstructing and Understanding the 3D World\\
-    at the IWR Institute in Heidelberg\\
-    \vspace{5cm}
-    submitted by\\
-    \vspace{0.5cm}
-	{\large\textbf{Till Bungert and Carsten Lüth}\\}
-	\vspace{5cm}
-	under the supervision of \\
-	\vspace{0.5cm}
-	{\large\textbf{Prof. Dr. Carsten Rother}\\}
-	and\\
-	{\large\textbf{Siva Karthik Mustikovela}\\}
+% Titelblatt der Arbeit
+\begin{titlepage}
 
 
-    \vspace{3cm}
-	{\Large\textbf{2018}}
-	
+    \begin{center} 
+        {\Large\textbf{ 
+                6D Pose Autoencoder
+        }}
+        \vspace{1cm}
 
-	
+        Project report Reconstructing and Understanding the 3D World\\
+        at the IWR Institute in Heidelberg\\
+        \vspace{5cm}
+        submitted by\\
+        \vspace{0.5cm}
+        {\large\textbf{Till Bungert and Carsten Lüth}\\}
+        \vspace{5cm}
+        under the supervision of \\
+        \vspace{0.5cm}
+        {\large\textbf{Prof. Dr. Carsten Rother}\\}
+        and\\
+        {\large\textbf{Siva Karthik Mustikovela}\\}
 
-  \end{center}
+
+        \vspace{3cm}
+        {\Large\textbf{2018}}
+
+
+
+
+    \end{center}
 \end{titlepage}
 
 
-  % Inhaltsverzeichnis
-  \tableofcontents
+% Inhaltsverzeichnis
+\tableofcontents
 
 \newpage
 
-  % Ab sofort Seitenzahlen in der Kopfzeile anzeigen
-  \pagestyle{headings}
+% Ab sofort Seitenzahlen in der Kopfzeile anzeigen
+\pagestyle{headings}
 
 \section{Introduction}\label{Introduction}
 The determination of 6D poses for known objects is a very important subject for robotics and augmented reality. For example in robotics it is crucial to have an accurate understanding of the position of an object to interact with it in a meaningful way. Almost the same applies to augmented reality because to enhance any object by rendering information on its visible surface it is important to know the position of the said object.\\
@@ -92,12 +92,12 @@ In the following section we focus on the novel 6D-Autoencoder which is a new int
 \subsection{Autoencoder}\label{Autoencoder}
 The original Autoencoder is a technique to map a high dimensional input ($x \in \mathbb{R}^N$), such as image or audio data, into a lower dimensional representation ($z \in \mathbb{R}^D$) ($D << N$) while maintaining the important information of its input. To achieve this the model which consists of an Encoder $\varphi$ and Decoder $\phi$ is tasked to reconstruct its input after passing it through a low dimensional bottleneck ($z$), where each of them is a general function approximator (neural network), resulting in the following objective function:
 \begin{equation}
-\min_{\varphi, \phi} L_{\text{rec}}(x, \phi(\varphi(x)))
+    \min_{\varphi, \phi} L_{\text{rec}}(x, \phi(\varphi(x)))
 \end{equation}
 $L_{\text{rec}}$ can be any arbitrary distance metric on $\mathbb{R}^N$. 
 A specialized form of the Autoencoder is the  Denoising Autoencoder. For this type of Autoencoder the input $x$ gets pertubed with random noise $\tilde{x} = f_{\text{noise}}(x) =x + \epsilon$ with $\epsilon \sim \mathbb{P}_{\epsilon}$ while being tasked to reconstruct the unpertubed $x$. This results in the following objective function:
 \begin{equation}
-\min_{\varphi, \phi} L_{\text{rec}}(x, \phi(\varphi(f_{\text{noise}}(x) )))
+    \min_{\varphi, \phi} L_{\text{rec}}(x, \phi(\varphi(f_{\text{noise}}(x) )))
 \end{equation}
 The trained model can be used to reconstruct unpertubed test images. But how is the latent space effected by this training schedule?
 This question leads to the core assumption to create the AAE which gets motivated by a later experiment.
@@ -106,7 +106,7 @@ This question leads to the core assumption to create the AAE which gets motivate
 The regularized Autoencoder as described in the `Deep Learning Book' by Goodfellow  \cite{Goodfellow} is defined by an additional loss or part of the objective function which is solely effected by the latent space representation. By adding this additional loss the latent space gains some desired properties such as a specific distribution with the Variational Autoencoder by using the KL-Divergence as latent loss.
 Resulting objective function of a regularized Autoencoder:
 \begin{equation}
-\min_{\varphi, \phi} L_{\text{rec}}(x, \phi(\varphi(f(x) ))) + L_{\text{lat}}(\varphi(f(x)))
+    \min_{\varphi, \phi} L_{\text{rec}}(x, \phi(\varphi(f(x) ))) + L_{\text{lat}}(\varphi(f(x)))
 \end{equation}
 $f$ can be any arbitrary augmentation or just the identity.
 
@@ -121,29 +121,33 @@ The motivation of the 6D-Pose-Autoencoder is to get two latent space $z_{\rot}$ 
 Therefore $z_{\rot}$ encodes the orientation and should be invariant against translation while $z_{\trans}$ encodes the translation while being invariant for rotations. This is done by taking two separate Augmented Autoencoder, one for the translation and one for the rotation. They receive the same input but are trained to reconstruct differently augmented versions of the input $x_{\rot}$ and $x_{\trans}$ . The training schedule is inspired by \textbf{Hypothesis 1}.
 This is achieved by applying random augmentations $f_{\text{aug}}$ comprised of a $f_{\trans}$ and $f_{\rot}$ on the input $x$. 
 \begin{equation}
- \begin{aligned}
-\tilde{x} = &f_{\text{aug}} (x) = (f_{\trans} \circ f_{\rot} ) (x) \\
-x_{\rot} =&f_{\rot} (x) \\
-x_{\trans} =&f_{\trans} (x) \\
-\hat{x}_{\rot} =& (\phi_{\rot} \circ \varphi_{\rot} \circ f_{\text{aug}}) (x) \\
-\hat{x}_{\trans} = &(\phi_{\trans} \circ \varphi_{\trans} \circ f_{\text{aug}}) (x)
-\end{aligned}
+    \begin{aligned}
+        \tilde{x} = &f_{\text{aug}} (x) = (f_{\trans} \circ f_{\rot} ) (x) \\
+        x_{\rot} =&f_{\rot} (x) \\
+        x_{\trans} =&f_{\trans} (x) \\
+        \hat{x}_{\rot} =& (\phi_{\rot} \circ \varphi_{\rot} \circ f_{\text{aug}}) (x) \\
+        \hat{x}_{\trans} = &(\phi_{\trans} \circ \varphi_{\trans} \circ f_{\text{aug}}) (x)
+    \end{aligned}
 \end{equation}
 The objective function of the system thereby is:
 \begin{equation}
- \begin{aligned}
-\min_{\varphi_{\rot}, \phi_{\rot}}  L_{\text{rec}}(x_{\rot}, \phi_{\rot}(\varphi_{\rot}(f_{\text{aug}}(x) ))) \\
-\min_{\varphi_{\trans}, \phi_{\trans}}  L_{\text{rec}}(x_{\trans}, \phi_{\trans}(\varphi_{\trans}(f_{\text{aug}}(x) ))) 
-\end{aligned}
+    \begin{aligned}
+        \min_{\varphi_{\rot}, \phi_{\rot}}  L_{\text{rec}}(x_{\rot}, \phi_{\rot}(\varphi_{\rot}(f_{\text{aug}}(x) ))) \\
+        \min_{\varphi_{\trans}, \phi_{\trans}}  L_{\text{rec}}(x_{\trans}, \phi_{\trans}(\varphi_{\trans}(f_{\text{aug}}(x) ))) 
+    \end{aligned}
 \end{equation}
 For the final model $\varphi_{\rot} = \varphi_{\rot}` \circ \varphi$ and $\varphi_{\trans}= \varphi_{\trans}` \circ \varphi$ so they are encoded by the same encoder and $z_{\rot}$ and $z_{\trans}$ are just created by a split int its latent space. The complete architecture can be seen in figure \ref{model_square}.
 \paragraph{Rotation} A rotation in one axis can be represented by a circle in Complex space ($\mathbb{C}$) parametrized by $\theta \in [0, 2 \pi]$ with $\exp(i \theta)$ the choice  is near to define $z_{\rot} \in \mathbb{R}^2$ and using as $L_{\text{lat}}(z) = \text{abs} (||z_{\rot}||_2^2 -1)$ which forces the encoded $z_{\rot}$ to be on the unity circle. \\ 
 Rotations with three axes can be represented in a similar manner as hyper sphere in Quaternion space ($\mathbb{Q}$). So for three rotational axes we defined $z_{\rot}$ to be in $\mathbb{R}^4$ which is a generalization of $\mathbb{Q}$ with the same latent loss as stated above.\\
+For the cube and the cat dataset we also test higher-dimensional latent
+representations for the rotation, similar to Sundermeier et
+al.~\cite{3D_Orientation_Learning}. In contrast to Sundermeier et al. we choose
+64 latent dimension.
 \paragraph{Translation} Because spatial proximity in our real world is defined by the euclidean distance in 3 dimension we chose stay as close as possible to this metric by defining the latent space for translations as follows: $z_{\trans} \in \mathbb{R}^3$. To have a dense feature space and due to the underlying metric of the real room the Euclidean norm of the latent space representations is used as regularization.
 \begin{equation}
- \begin{aligned}
-L_{\text{lat}}(z) = z_{\trans}^2
-\end{aligned}
+    \begin{aligned}
+        L_{\text{lat}}(z) = z_{\trans}^2
+    \end{aligned}
 \end{equation}
 Translations are often also easier to learn and disentangle for a neural network, traditional autoencoders on mnist for example often have translations as single latent dimensions. A fact that needs to be taken into consideration with this method is that the $z$ or depth axis could also be parametrized by scale so for objects with similar shape but different scales there would also be some ambiguities.
 
@@ -152,78 +156,132 @@ Translations are often also easier to learn and disentangle for a neural network
 The 6D-AE is after training able to extract the 3D orientation in $z_{\rot}$ and the translation in $z_{\trans}$. The clarity, orientation and translations of the reconstructions are a first indicator of the quality of the encodings. To extract the orientation and translation from the latent space representations we create a codebook for both rotation and translation.\\
 This is done in the following way:
 \begin{enumerate}
-\item Render synthetic objects with known translation and rotation\\
-\item Create a codebook by encoding the rendered images to $z_{\rot}\in \mathbb{R}^{O-1}$ and $z_{\trans} \in \mathbb{R}^3$ where each of those belongs to a specific rotation and translation with respect to the camera
+    \item Render synthetic objects with known translation and rotation\\
+    \item Create a codebook by encoding the rendered images to $z_{\rot}\in \mathbb{R}^{O-1}$ and $z_{\trans} \in \mathbb{R}^3$ where each of those belongs to a specific rotation and translation with respect to the camera
 \end{enumerate}
 The next step is to utilize the K-Nearest-Neighbour algorithm separately on the two latent space representations of the test images with unknown labels compared to the codebook with known labels.\\
-The Distance metric used for the rotations $z_{\rot}$ is the cosine similarity. This is done because we initially made the assumption that our representations lie in a hyper sphere with unit distance from the origin.
+The Distance metric used by Sundermeier et al.~for the rotations $z_{\rot}$ is the cosine similarity. This is done because we initially made the assumption that our representations lie in a hyper sphere with unit distance from the origin.
 \begin{equation}
-\cos_i = \dfrac{z_i \cdot z_{\text{test}}}{ \vert\vert  z_i \vert \vert \cdot \vert \vert z_{\text{test}} \vert \vert }
+    \cos_i = \dfrac{z_i \cdot z_{\text{test}}}{ \vert\vert  z_i \vert \vert \cdot \vert \vert z_{\text{test}} \vert \vert }
 \end{equation}
-For the translation the euclidean distance was chosen as distance metric to determine the next nearest neighbours and instead of the naive kNN algorithm a with softmax weighted algorithm was used to compute the location of the object $\vec{y}$. 
+For the translation the euclidean distance was chosen as distance metric to
+determine the next nearest neighbours and instead of the naive kNN algorithm we
+compute a weighted mean over the k-nearest neighbors.
 \begin{equation}
-\vec{y}(z_{\trans}) = \dfrac{\sum_j  \vec{y}_j  \cdot  \exp(- L_2(z_{\trans},z_{\trans , j})) }{\sum_j \exp(- L_2(z_{\trans},z_{\trans , j}))}
+    \vec{y}(z_{\trans}) = \dfrac{\sum_j  \vec{y}_j  \cdot
+    \mathcal{L}_2(z_{\trans},z_{\trans , j}) }{\sum_j \mathcal{L}_2(z_{\trans},z_{\trans , j})}
 \end{equation}
+
+We found experimentally, that for the rotations the euclidean metric works
+equally well or better than the cosine similarity. We conject that this is due
+to the fact that our model does not necessarily learn the whole unit circle or
+hypersphere due to symmetries in our model. Because of this finding we will use
+the same metric for translation and rotation in the codebook in our
+experiments.
 
 
 \newpage
 \section{Evalutation}\label{Evaluation}
 In the following section we present our results as well as the methods used to investigate the behaviour of the 6D-AE and to verify the assumptions made in the chapter methods \ref{Methods}.\\
-The metric we used to determine the quality of our model is the Visible Surface Discrepancy Metric. It is an ambiguity-invariant pose error function that is determined by the distance between the estimated and ground truth visible object depth surfaces. Because for our model always the complete object is visible the depth surfaces are of no importance for our model. 
+The metric we used to determine the quality of our model is the Visible Surface Discrepancy Metric designed by Hodan et al. 
+In table \ref{square_results} we can see that for the simple problems of square
+and cube our model behaves quite well, as is shown by low root mean squared
+errors. We also show the visual surface discrepancy \cite{hodavn2016evaluation}, an ambiguity
+invariant metric determined by the distance between the estimated and
+ground-truth depth surfaces. We choose the tolerance to be $\tau = 10$
+and the visibility to be at least $10\%$. As we can see the value is close to
+zero for the simple data sets and we achieve a recall close to one (vsd $<
+0.3$). For the angles we compute the cosine similarity by converting the angle
+representation to the quaternion representation and computing the scalar
+product.
+
+For the cat dataset many problems arised. Although our reconstructions seemed
+visually quite good, the evaluation metrics suggest otherwise. It is especially
+noteworthy, that for the angles most errors were close to $0^{\circ}$ or
+$180^{\circ}$, suggesting that our model learned a symmetry that the cat model
+does not exhibit. We briefly investigated whether our evaluation is faulty but
+the other evaluation metrics suggest that our model does not perform all that
+well quantitatively. The main area for improvement should be the number of
+latent dimensions, as Sundermeier et al.~used double the amount we used.
+Additional evaluations are described in the respective subsection for each
+dataset.
+\begin{table}
+    \begin{adjustbox}{width=\textwidth}
+        \begin{tabular}[width = \textwidth]{lccccccccc} 
+            Metric & \multicolumn{6}{c}{RMSE} & mean vsd & recall & mean cosine \\
+                   &&&&&&&&& similarity \\
+            \hline
+            Parameter & $\theta$ & $\phi$ & $\gamma$ & $x_{\text{ax}}$  &
+            $y_{\text{ax}}$ & $z_{\text{ax}}$ &       &      & angles\\
+            \hline
+            Square        & 0.73     &        &          & 0.04             & 0.04            & 0.20            & 0.06  & 1.00 & 1.00 \\
+            CUBE 4        & 14.10    & 12.80  &          & 0.06             & 0.06
+                          & 0.19     & 0.12   & 0.99     & 0.96            \\
+            CUBE 64       & 7.27    & 6.15  &          & 0.05             & 0.05
+                          & 0.16     & 0.10   & 0.99     & 0.97            \\
+            CAT 4         & 107.07   & 77.48  & 105.04   & 0.12             & 0.13
+                          & 0.34     & 0.54 & 0.03 & 0.51    \\
+            CAT 64        & 112.51   & 75.27  & 111.50   & 0.13             & 0.13
+                          & 0.31     & 0.51 & 0.08 & 0.53    \\
+        \end{tabular}
+    \end{adjustbox}
+    \caption{Evaluation metrics for the different datasets}
+    \label{square_results}
+\end{table}
 \subsection{2D Square in 3D Space}\label{Square}
 In this experiment we focused on reproducing the qualitative results of the Augmented Autoencoder which can be seen in figure \ref{SQUARE_Martin} and disentangling the latent space representation of the translation and rotation with the training scheme represented in the chapter \ref{6D Pose Autoencoder}. The resulting reconstructions allow conclusion on the orientation of the square and only contain either translation or rotation. They can be seen in figure \ref{square_images} in the appendix.\\
 $z_{\rot}$ was defined to be in in $\mathbb{R}^2$ representing $\mathbb{C}$ as described in chapter \ref{Methods} due to the single rotation axis of the object. Due to the two perpendicular axes of symmetry the square posses we anticipated to see a shifted and cosine function with the frequency $f = 2/ \pi$, because the square appears exactly the same after a rotation of $\dfrac{\pi}{2}i$. \\
 The second part was to show that the translation could be extracted from the latent space representation $z_{\trans}$ and that different rotations have negligible effect on it. The resulting plot for the correlation between $z_{\rot}$ and the rotation $\varphi$ as well as $z_{\trans}$ and the translation can be seen in figure \ref{Square_corr_rot} and \ref{Square_corr_trans}. 
-The plot for $\theta$ shows a periodic behaviour with the correct correct frequency but not the predicted cosine and sine.
+The plot for $\theta$ shows a periodic behaviour with the correct frequency but not the predicted cosine and sine.
 \begin{figure}[!ht]
-\centering
-\begin{subfigure}{0.49\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {square_theta_z0.pdf}
-	\caption{}
-	\label{fig_zo}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{square_theta_z1.pdf}
-	\caption{}
-	\label{fig_z1}
-\end{subfigure}
-\caption{Correlation plots of the rotation $\theta$ and the dimensions of $z_{\rot}$.\\
-The values show a period of $\pi/2$ representing the symmetries of the square even though they do not show the anticipated behaviour of being cosine and sine.} \label{Square_corr_rot}
+    \centering
+    \begin{subfigure}{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {square_theta_z0.pdf}
+        \caption{}
+        \label{fig_zo}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{square_theta_z1.pdf}
+        \caption{}
+        \label{fig_z1}
+    \end{subfigure}
+    \caption{Correlation plots of the rotation $\theta$ and the dimensions of $z_{\rot}$.\\
+    The values show a period of $\pi/2$ representing the symmetries of the square even though they do not show the anticipated behaviour of being cosine and sine.} \label{Square_corr_rot}
 \end{figure}
 
 Additionally we interpolated in the $z_{\trans}$ and $z_{\rot}$ space. There it verifies that our assumptions about the unity circle were not correct because it did not show the anticipated behaviour for the rotations which can be observed in figure \ref{square_ipol}.
 The interpolations in $z_{\trans}$ can be seen in figure \ref{square_ipol} and behave as anticipated by representing the translations where the scaling or depth translation is entangled with all 3 dimensions of $z_{\trans}$. A possible explanation for this is that the learned representation is a coordinate system with a linear transformation of the real coordinates.\\  
 \begin{figure}[!ht]
-\centering
-\begin{subfigure}{0.49\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {square_interpolation_theta.png}
-	\caption{}
-	\label{fig1:subim1}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{square_interpolation_x.png}
-	\caption{}
-	\label{fig1:subim2}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth ] {square_interpolation_y.png}
-	\caption{}
-	\label{fig1:subim3}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth] {square_interpolation_z.png}
-	\caption{}
-	\label{fig1:subim4}
-\end{subfigure}
-\caption{Interpolations: (a) in $\alpha \in (\pi /2, 3/2 \pi)$ with $z_{\rot}= (cos(\alpha), sin(\alpha))^T$\\
-(b), (c) and (d) linear interpolations from 0 to 2 in $z_{\trans_{1/2/3}}$ with other dimensions set to 0.\\
-All 3 dimensions seem to represent the translation in the $z$ axis and a different mixture of $x$ and $y$ axis which appears to be linearly separable according to (b), (c) and (d).} \label{square_ipol}
+    \centering
+    \begin{subfigure}{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {square_interpolation_theta.png}
+        \caption{}
+        \label{fig1:subim1}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{square_interpolation_x.png}
+        \caption{}
+        \label{fig1:subim2}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth ] {square_interpolation_y.png}
+        \caption{}
+        \label{fig1:subim3}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth] {square_interpolation_z.png}
+        \caption{}
+        \label{fig1:subim4}
+    \end{subfigure}
+    \caption{Interpolations: (a) in $\alpha \in (\pi /2, 3/2 \pi)$ with $z_{\rot}= (cos(\alpha), sin(\alpha))^T$\\
+        (b), (c) and (d) linear interpolations from 0 to 2 in $z_{\trans_{1/2/3}}$ with other dimensions set to 0.\\
+    All 3 dimensions seem to represent the translation in the $z$ axis and a different mixture of $x$ and $y$ axis which appears to be linearly separable according to (b), (c) and (d).} \label{square_ipol}
 \end{figure}
 \newpage
 \subsection{3D Cube}\label{Cube}
@@ -231,21 +289,21 @@ In this experiment we wanted to expand our predictions to a more complex case by
 The correlations for the translation, which can be seen in figure \ref{cube_corr_trans}, also lead to the conclusion of $z_{\trans}$ being a linear transformation of the translations. 
 We also trained a model with $64$ rotational latent space dimensions for the cube to see how the accuracy of the predicted rotations behaves for increasing dimensions.
 \begin{figure}[!ht]
-\centering
-\begin{subfigure}{0.49\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cube_rot_phi_z_all.pdf}
-	\caption{}
-	\label{fig_rotph_all}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cube_rot_theta_z_all.pdf}
-	\caption{}
-	\label{fig_rotth_all}
-\end{subfigure}
-\caption{Correlation plots of the rotation $\theta$ as well as $\phi$ and the dimensions of $z_{\rot}$.\\
-The different dimensions are differently colored and show clear periodic behaviour.} \label{cube_corr_rot}
+    \centering
+    \begin{subfigure}{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cube_rot_phi_z_all.pdf}
+        \caption{}
+        \label{fig_rotph_all}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cube_rot_theta_z_all.pdf}
+        \caption{}
+        \label{fig_rotth_all}
+    \end{subfigure}
+    \caption{Correlation plots of the rotation $\theta$ as well as $\phi$ and the dimensions of $z_{\rot}$.\\
+    The different dimensions are differently colored and show clear periodic behaviour.} \label{cube_corr_rot}
 \end{figure}
 
 
@@ -258,53 +316,53 @@ Because the reconstructions of this the AAE with $z_{\rot}$ being 4 dimensional 
 Also we could not find any correlations in the rotational latent space to any euler angle for Model 1. Due to the big latent space we did not even attempt to find correlations by hand for Model 2. Our only way to verify the quality of the latent space thereby is the prediction of the correct pose via the codebook for Model 2 and also Model 1. \\
 
 \begin{figure}[!ht]
-\centering
-\begin{subfigure}{\textwidth}
-	\centering
-	\includegraphics[width=0.49\textwidth] {cat_input.png}
-	\caption{Input}
-	\label{cat_in}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cat_target0.png}
-	\caption{Rotation target}
-	\label{cat_r}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cat_4_output0.png}
-	\caption{Rotation Model 1}
-	\label{cat_rrec}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cat_64_output0.png}
-	\caption{Rotation Model 2}
-	\label{cat_rrec2}
-\end{subfigure}
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=0.49\textwidth] {cat_input.png}
+        \caption{Input}
+        \label{cat_in}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cat_target0.png}
+        \caption{Rotation target}
+        \label{cat_r}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cat_4_output0.png}
+        \caption{Rotation Model 1}
+        \label{cat_rrec}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cat_64_output0.png}
+        \caption{Rotation Model 2}
+        \label{cat_rrec2}
+    \end{subfigure}
 
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cat_target1.png}
-	\caption{Translation target}
-	\label{cat_t}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cat_4_output1.png}
-	\caption{Translation Model 1}
-	\label{cat_trec}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cat_64_output1.png}
-	\caption{Translation Model 2}
-	\label{cat_trec1}
-\end{subfigure}
-\caption{Comparision between reconstructions and targets of the two AAEs. 
-Dimensions of $z_{\rot}$: 4 for Model 1 and 64 for Model 2.\\
-The reconstructions of Model 2 show much more detail and are less ambiguous regarding to the reconstructed rotation than the reconstructions of Model 1.} \label{cat_images}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cat_target1.png}
+        \caption{Translation target}
+        \label{cat_t}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cat_4_output1.png}
+        \caption{Translation Model 1}
+        \label{cat_trec}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cat_64_output1.png}
+        \caption{Translation Model 2}
+        \label{cat_trec1}
+    \end{subfigure}
+    \caption{Comparision between reconstructions and targets of the two AAEs. 
+        Dimensions of $z_{\rot}$: 4 for Model 1 and 64 for Model 2.\\
+    The reconstructions of Model 2 show much more detail and are less ambiguous regarding to the reconstructed rotation than the reconstructions of Model 1.} \label{cat_images}
 \end{figure}
 
 \newpage
@@ -340,7 +398,7 @@ The connection between $N$-dimensional rotations and the $N-1$-dimensional unity
 We were also not able to verify the high accuracy of the AAE for pose predictions as presented by Martin Sundermeier et al. \cite{3D_Orientation_Learning}, but it is possible that we did not spend enough time to tune the hyperparameters of the model.\\
 The general purpose of the project was achieved by showing that the translation of the object can be easily separated into a certain part of the latent space with a high correlation to the real translation.
 
- 
+
 \newpage
 \section{Sources}\label{Sources}
 \printbibliography
@@ -348,209 +406,209 @@ The general purpose of the project was achieved by showing that the translation 
 \newpage
 \section{Appendix}
 \begin{figure}
-\center
-\includegraphics[width = \linewidth]{MARTIN_Squares.png}
-\caption{Results presented by Martin et al. in \cite{3D_Orientation_Learning} to compare with our results for square in fig \ref{square_ipol}
-Left: squares from the distributions (a,b,c and d) with different translations in x,y and z axis used for training and testing\\
-Right: Normalized latent dimensions $z_{\rot_1}$ and $z_{\rot_2}$ for the rotations of the distributions from (a-d). (1-2) are from normal AEs whereas (3) is from the AAE.}\label{SQUARE_Martin}
+    \center
+    \includegraphics[width = \linewidth]{MARTIN_Squares.png}
+    \caption{Results presented by Martin et al. in \cite{3D_Orientation_Learning} to compare with our results for square in fig \ref{square_ipol}
+        Left: squares from the distributions (a,b,c and d) with different translations in x,y and z axis used for training and testing\\
+    Right: Normalized latent dimensions $z_{\rot_1}$ and $z_{\rot_2}$ for the rotations of the distributions from (a-d). (1-2) are from normal AEs whereas (3) is from the AAE.}\label{SQUARE_Martin}
 \end{figure}
 
 
 \begin{figure}[!ht]
-\centering
-\begin{subfigure}{\textwidth}
-	\centering
-	\includegraphics[width=0.49\textwidth] {square_input.png}
-	\caption{Input}
-	\label{sq_in}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {square_output0.png}
-	\caption{Translation reconstr.}
-	\label{sq_trec}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{square_output1.png}
-	\caption{Rotation reconstr.}
-	\label{sq_rrec}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {square_target0.png}
-	\caption{Translation target}
-	\label{sq_tt}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{square_target1.png}
-	\caption{Rotation target}
-	\label{sq_rt}
-\end{subfigure}
-\caption{} \label{square_images}
-\end{figure}
-
-
-
-\begin{figure}[!ht]
-\centering
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {square_x_z0.pdf}
-	\caption{}
-	\label{fig_xzo}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{square_x_z0.pdf}
-	\caption{}
-	\label{fig_xz1}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {square_x_z0.pdf}
-	\caption{}
-	\label{fig_xz2}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{square_y_z1.pdf}
-	\caption{}
-	\label{fig_yz0}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {square_y_z1.pdf}
-	\caption{}
-	\label{fig_yz1}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{square_y_z1.pdf}
-	\caption{}
-	\label{fig_yz2}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {square_z_z2.pdf}
-	\caption{}
-	\label{fig_zzo}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{square_z_z2.pdf}
-	\caption{}
-	\label{fig_zz1}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{square_z_z2.pdf}
-	\caption{}
-	\label{fig_zz2}
-\end{subfigure}
-\caption{Correlation plots of the translations $x,y$ and $z$ and the dimensions of $z_{\rot}$ for the square.\\
-The rows represent the translations in axes x,y and z e.g. (a-c) for x\\
-The colums represent the $z_{\rot_i}$ e.g. (a), (d) and (g) for $z_{\rot_1}$} \label{Square_corr_trans}
-\end{figure}
-
-
-\begin{figure}[!ht]
-\centering
-\begin{subfigure}{\textwidth}
-	\centering
-	\includegraphics[width=0.49\textwidth] {cube_input.png}
-	\caption{Input}
-	\label{cube_in}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cube_output0.png}
-	\caption{Translation reconstr.}
-	\label{cube_trec}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cube_output1.png}
-	\caption{Rotation reconstr.}
-	\label{cube_rrec}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cube_target0.png}
-	\caption{Translation target}
-	\label{cube_tt}
-\end{subfigure}
-\begin{subfigure}{0.49\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cube_target1.png}
-	\caption{Rotation target}
-	\label{cube_rt}
-\end{subfigure}
-\caption{} \label{cube_images}
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=0.49\textwidth] {square_input.png}
+        \caption{Input}
+        \label{sq_in}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {square_output0.png}
+        \caption{Translation reconstr.}
+        \label{sq_trec}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{square_output1.png}
+        \caption{Rotation reconstr.}
+        \label{sq_rrec}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {square_target0.png}
+        \caption{Translation target}
+        \label{sq_tt}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{square_target1.png}
+        \caption{Rotation target}
+        \label{sq_rt}
+    \end{subfigure}
+    \caption{} \label{square_images}
 \end{figure}
 
 
 
 \begin{figure}[!ht]
-\centering
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cube_trans_x_z0.pdf}
-	\caption{}
-	\label{cfig_xzo}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cube_trans_x_z0.pdf}
-	\caption{}
-	\label{cfig_xz1}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cube_trans_x_z0.pdf}
-	\caption{}
-	\label{cfig_xz2}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cube_trans_y_z1.pdf}
-	\caption{}
-	\label{cfig_yz0}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cube_trans_y_z1.pdf}
-	\caption{}
-	\label{cfig_yz1}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cube_trans_y_z1.pdf}
-	\caption{}
-	\label{cfig_yz2}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering
-	\includegraphics[width=\textwidth] {cube_trans_z_z2.pdf}
-	\caption{}
-	\label{cfig_zzo}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cube_trans_z_z2.pdf}
-	\caption{}
-	\label{cfig_zz1}
-\end{subfigure}
-\begin{subfigure}{0.3\textwidth}
-	\centering	
-	\includegraphics[width=\textwidth]{cube_trans_z_z2.pdf}
-	\caption{}
-	\label{cfig_zz2}
-\end{subfigure}
-\caption{Correlation plots of the translations $x,y$ and $z$ and the dimensions of $z_{\rot}$ for the cube.\\
-The rows represent the translations in axes x,y and z e.g. (a-c) for x\\
-The colums represent the $z_{\rot_i}$ e.g. (a), (d) and (g) for $z_{\rot_1}$} \label{cube_corr_trans}
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {square_x_z0.pdf}
+        \caption{}
+        \label{fig_xzo}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{square_x_z0.pdf}
+        \caption{}
+        \label{fig_xz1}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {square_x_z0.pdf}
+        \caption{}
+        \label{fig_xz2}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{square_y_z1.pdf}
+        \caption{}
+        \label{fig_yz0}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {square_y_z1.pdf}
+        \caption{}
+        \label{fig_yz1}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{square_y_z1.pdf}
+        \caption{}
+        \label{fig_yz2}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {square_z_z2.pdf}
+        \caption{}
+        \label{fig_zzo}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{square_z_z2.pdf}
+        \caption{}
+        \label{fig_zz1}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{square_z_z2.pdf}
+        \caption{}
+        \label{fig_zz2}
+    \end{subfigure}
+    \caption{Correlation plots of the translations $x,y$ and $z$ and the dimensions of $z_{\rot}$ for the square.\\
+        The rows represent the translations in axes x,y and z e.g. (a-c) for x\\
+    The colums represent the $z_{\rot_i}$ e.g. (a), (d) and (g) for $z_{\rot_1}$} \label{Square_corr_trans}
+\end{figure}
+
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=0.49\textwidth] {cube_input.png}
+        \caption{Input}
+        \label{cube_in}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cube_output0.png}
+        \caption{Translation reconstr.}
+        \label{cube_trec}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cube_output1.png}
+        \caption{Rotation reconstr.}
+        \label{cube_rrec}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cube_target0.png}
+        \caption{Translation target}
+        \label{cube_tt}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cube_target1.png}
+        \caption{Rotation target}
+        \label{cube_rt}
+    \end{subfigure}
+    \caption{} \label{cube_images}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cube_trans_x_z0.pdf}
+        \caption{}
+        \label{cfig_xzo}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cube_trans_x_z0.pdf}
+        \caption{}
+        \label{cfig_xz1}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cube_trans_x_z0.pdf}
+        \caption{}
+        \label{cfig_xz2}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cube_trans_y_z1.pdf}
+        \caption{}
+        \label{cfig_yz0}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cube_trans_y_z1.pdf}
+        \caption{}
+        \label{cfig_yz1}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cube_trans_y_z1.pdf}
+        \caption{}
+        \label{cfig_yz2}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth] {cube_trans_z_z2.pdf}
+        \caption{}
+        \label{cfig_zzo}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cube_trans_z_z2.pdf}
+        \caption{}
+        \label{cfig_zz1}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \centering	
+        \includegraphics[width=\textwidth]{cube_trans_z_z2.pdf}
+        \caption{}
+        \label{cfig_zz2}
+    \end{subfigure}
+    \caption{Correlation plots of the translations $x,y$ and $z$ and the dimensions of $z_{\rot}$ for the cube.\\
+        The rows represent the translations in axes x,y and z e.g. (a-c) for x\\
+    The colums represent the $z_{\rot_i}$ e.g. (a), (d) and (g) for $z_{\rot_1}$} \label{cube_corr_trans}
 \end{figure}
 
 
