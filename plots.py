@@ -35,7 +35,7 @@ def latexify(fig_width=None, fig_height=None):
 
     if fig_height is None:
         golden_mean = (np.sqrt(5)-1.0)/2.0    # Aesthetic ratio
-        fig_height = fig_width*golden_mean # height in inches
+        fig_height = fig_width*golden_mean  # height in inches
 
     MAX_HEIGHT_INCHES = 8.0
     if fig_height > MAX_HEIGHT_INCHES:
@@ -44,25 +44,26 @@ def latexify(fig_width=None, fig_height=None):
         fig_height = MAX_HEIGHT_INCHES
 
     params = {
-      'backend': 'ps',
-      #'text.latex.preamble': ['\usepackage{gensymb}'],
-      'axes.labelsize': 8, # fontsize for x and y labels (was 10)
-      'axes.titlesize': 8,
-      'font.size':       8, # was 10
-      'legend.fontsize': 8, # was 10
-      'xtick.labelsize': 8,
-      'ytick.labelsize': 8,
-      'text.usetex': True,
-      'figure.figsize': [fig_width,fig_height],
-      'font.family': 'serif'
+        'backend':         'ps',
+        # 'text.latex.preamble': ['\usepackage{gensymb}'],
+        'axes.labelsize':  8,  # fontsize for x and y labels (was 10)
+        'axes.titlesize':  8,
+        'font.size':       8,  # was 10
+        'legend.fontsize': 8,  # was 10
+        'xtick.labelsize': 8,
+        'ytick.labelsize': 8,
+        'text.usetex':     True,
+        'figure.figsize':  [fig_width, fig_height],
+        'font.family':     'serif'
     }
 
     matplotlib.rcParams.update(params)
 
 
-
 def interpolate():
-    model = torch.load('./runs/Jan11_14-32-04_GLaDOS_square_both/checkpoints/70.model')
+    Path('./figures').mkdir(exist_ok=True)
+    model = torch.load(
+        './runs/Jan11_14-32-04_GLaDOS_square_both_4/checkpoints/70.model')
     angles = torch.tensor(np.linspace(np.pi/2, 1.5*np.pi, 64)).float()
     z = torch.stack([torch.cos(angles),  torch.sin(angles)], dim=1)
     save_image(model.dec1(z), './figures/interpolation_theta.png')
@@ -83,89 +84,93 @@ def interpolate():
 def correlation_plots():
     device = 'cuda'
     for shape in ['square', 'cube', 'cat', 'eggbox']:
-        model = torch.load(sorted(Path('./runs').glob(f'*{shape}*'))[-1] /
-                           'checkpoints/70.model')
-        model.to(device)
-        loader = get_loader(f'./data/{shape}', image_size=128,
-                            batch_size=64, dataset='Geometric',
-                            mode='test', num_workers=4,
-                            pin_memory=True, mean=[0]*3,
-                            std=[1]*3)
-        all_z = []
-        all_z_ax = []
-        all_angles = []
-        all_axis = []
-        plot_sample = True
-        for i, (x1, x2, x3, label) in tqdm(enumerate(loader)):
-            with torch.no_grad():
-                x1 = x1.to(device)
-                x2 = x2.to(device)
-                x3 = x3.to(device)
-                z, x_ = model(x1, mode='both')
+        for n in [4, 64]:
+            if n == 64 and shape == 'square':
+                continue
+            print(f'{shape}_{n}')
+            Path(f'./figures/{shape}_{n}_').mkdir(parents=True, exist_ok=True)
 
-                val_x = [x2, x3]
-                out_x = x_
+            model = torch.load(sorted(Path('./runs').glob(f'*{shape}*_{n}'))[-1] /
+                               'checkpoints/70.model')
+            model.to(device)
+            loader = get_loader(f'./data/{shape}', image_size=128,
+                                batch_size=64, dataset='Geometric',
+                                mode='test', num_workers=4,
+                                pin_memory=True, mean=[0]*3,
+                                std=[1]*3)
+            all_z = []
+            all_z_ax = []
+            all_angles = []
+            all_axis = []
+            plot_sample = True
+            for i, (x1, x2, x3, label) in tqdm(enumerate(loader)):
+                with torch.no_grad():
+                    x1 = x1.to(device)
+                    x2 = x2.to(device)
+                    x3 = x3.to(device)
+                    z, x_ = model(x1, mode='both')
 
-                if plot_sample:
-                    plot_sample = False
-                    save_image(x1.cpu(), f'./figures/{shape}_/input.png', pad_value=0.5)
-                    for i, x in enumerate(out_x):
-                        save_image(x.cpu(), f'./figures/{shape}_/output{i}.png', pad_value=0.5)
-                        save_image(val_x[i].cpu(), f'./figures/{shape}_/target{i}.png', pad_value=0.5)
+                    val_x = [x2, x3]
+                    out_x = x_
 
-                all_z.append(z[0])
-                all_angles.append(label[:, 3:])
-                all_axis.append(label[:, :3])
-                all_z_ax.append(z[1])
+                    if plot_sample:
+                        plot_sample = False
+                        save_image(
+                            x1.cpu(), f'./figures/{shape}_{n}_/input.png', pad_value=0.5)
+                        for i, x in enumerate(out_x):
+                            save_image(
+                                x.cpu(), f'./figures/{shape}_{n}_/output{i}.png', pad_value=0.5)
+                            save_image(
+                                val_x[i].cpu(), f'./figures/{shape}_{n}_/target{i}.png', pad_value=0.5)
 
-        all_z = torch.cat(all_z, dim=0).cpu()
-        all_z_ax = torch.cat(all_z_ax, dim=0).cpu()
-        all_angles = torch.cat(all_angles, dim=0).cpu()
-        all_axis = torch.cat(all_axis, dim=0).cpu()
+                    all_z.append(z[0])
+                    all_angles.append(label[:, 3:])
+                    all_axis.append(label[:, :3])
+                    all_z_ax.append(z[1])
 
-        if shape == square:
-            all_m_angles = all_angles//1
-            angle_list  = torch.arange(0,361)
-            angle_z     = torch.zeros(360)
-            for i, angle in enumerate(angle_list):
-                angle_z[i] = all_z[all_m_angles== angle].mean(dim=0)
+            all_z = torch.cat(all_z, dim=0).cpu()
+            all_z_ax = torch.cat(all_z_ax, dim=0).cpu()
+            all_angles = torch.cat(all_angles, dim=0).cpu()
+            all_axis = torch.cat(all_axis, dim=0).cpu()
 
+            if shape == 'square':
+                all_m_angles = (all_angles//1).float()
+                angle_list = torch.arange(0, 361).float()
+                angle_z = torch.zeros(361)
 
+                for i in range(model.rot_dim):
+                    for j, name in enumerate(['theta', 'phi', 'gamma']):
+                        for k, angle in enumerate(angle_list):
+                            angle_z[k] = all_z[:, i][all_m_angles[:, j] == angle].mean(dim=0)
+
+                        fig, ax = plt.subplots()
+                        ax.plot(angle_list.cpu().numpy(), angle_z.cpu().numpy())
+                        ax.set(xlabel=f'$\\{name}$', ylabel=f'$z_{i}$')
+                        printfig(f'./figures/{shape}_{n}_/rot_mean_{name}_z{i}')
+                        plt.close()
+
+            for i in range(model.trans_dim):
+                for j, name in enumerate(['x', 'y', 'z']):
+                    fig, ax = plt.subplots()
+                    ax.scatter(all_axis[:, j], all_z_ax[:, i], s=2)
+                    ax.set(xlabel=f'${name}$', ylabel=f'$z_{i}$')
+                    printfig(f'./figures/{shape}_{n}_/trans_{name}_z{i}')
+                    plt.close()
             for i in range(model.rot_dim):
                 for j, name in enumerate(['theta', 'phi', 'gamma']):
                     fig, ax = plt.subplots()
-                    ax.scatter(angle_list[:, j], angle_z[:, i], s=2)
+                    ax.scatter(all_angles[:, j], all_z[:, i], s=2)
                     ax.set(xlabel=f'$\\{name}$', ylabel=f'$z_{i}$')
-                    printfig(f'./figures/{shape}_/rot_mean_{name}_z{i}')
+                    printfig(f'./figures/{shape}_{n}_/rot_{name}_z{i}')
                     plt.close()
 
-            
-
-        for i in range(model.trans_dim):
-            for j, name in enumerate(['x', 'y', 'z']):
-                fig, ax = plt.subplots()
-                ax.scatter(all_axis[:, j], all_z_ax[:, i], s=2)
-                ax.set(xlabel=f'${name}$', ylabel=f'$z_{i}$')
-                printfig(f'./figures/{shape}_/trans_{name}_z{i}')
-                plt.close()
-        for i in range(model.rot_dim):
             for j, name in enumerate(['theta', 'phi', 'gamma']):
                 fig, ax = plt.subplots()
-                ax.scatter(all_angles[:, j], all_z[:, i], s=2)
-                ax.set(xlabel=f'$\\{name}$', ylabel=f'$z_{i}$')
-                printfig(f'./figures/{shape}_/rot_{name}_z{i}')
+                ax.set(xlabel=f'$\\{name}$', ylabel='$z_{rot}$')
+                for i in range(model.rot_dim):
+                    ax.scatter(all_angles[:, j], all_z[:, i], s=2)
+                printfig(f'./figures/{shape}_{n}_/rot_{name}_z_all')
                 plt.close()
-
-        for j, name in enumerate(['theta', 'phi', 'gamma']):
-            fig, ax = plt.subplots()
-            ax.set(xlabel=f'$\\{name}$', ylabel='$z_{rot}$')
-            for i in range(model.rot_dim):
-                ax.scatter(all_angles[:, j], all_z[:, i], s=2)
-            printfig(f'./figures/{shape}_/rot_{name}_z_all')
-            plt.close()
-                
-
-
 
 
 if __name__ == '__main__':
